@@ -8,12 +8,13 @@
     android:layout_marginVertical="12dp">
 
     <Button
-        android:id="@+id/dddd"
+        android:id="@+id/uploadFileNow"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="Sync now" />
 
     <Button
+        android:id="@+id/registerDeviceNow"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="Register device Now" />

@@ -6,9 +6,15 @@ import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.refoler.Refoler;
 import com.refoler.app.Applications;
+import com.refoler.app.backend.DeviceWrapper;
+import com.refoler.app.backend.consts.RecordConst;
+import com.refoler.app.backend.consts.ResponseWrapper;
 import com.refoler.app.process.db.ReFileConst;
 import com.refoler.app.process.db.RemoteFolderDoc;
+import com.refoler.app.ui.PrefsKeyConst;
+import com.refoler.app.utils.JsonRequest;
 
 import org.json.JSONObject;
 
@@ -26,8 +32,7 @@ public class SyncFileListProcess {
     private Thread workerThread;
 
     public interface OnSyncFileListProcessListener {
-        void onSyncFileListProcessFinished();
-
+        void onSyncFileListProcessFinished(ResponseWrapper responseWrapper);
         void onSyncFileListProcessFailed(Throwable throwable);
     }
 
@@ -44,8 +49,12 @@ public class SyncFileListProcess {
         this.listProcessListeners.add(listProcessListener);
     }
 
+    public void removeListener(OnSyncFileListProcessListener listProcessListener) {
+        this.listProcessListeners.remove(listProcessListener);
+    }
+
     public boolean isProcessRunning() {
-        return workerThread.isAlive();
+        return workerThread != null && workerThread.isAlive();
     }
 
     public void interruptWorker() {
@@ -59,10 +68,20 @@ public class SyncFileListProcess {
             throw new IllegalStateException("Process is already running");
         }
 
-        SharedPreferences prefs = Applications.getPrefs();
-        workerThread = new Thread(() -> runFileListWork(context, null,
-                prefs.getInt(PrefsKeyConst.PREFS_KEY_INDEX_MAX_SIZE, 150),
-                prefs.getBoolean(PrefsKeyConst.PREFS_KEY_INDEX_HIDDEN_FILES, false)));
+        SharedPreferences prefs = Applications.getPrefs(context);
+        workerThread = new Thread(() -> {
+            try {
+                runFileListWork(context, null,
+                        prefs.getInt(PrefsKeyConst.PREFS_KEY_INDEX_MAX_SIZE, 150),
+                        prefs.getBoolean(PrefsKeyConst.PREFS_KEY_INDEX_HIDDEN_FILES, false));
+            } catch (Throwable throwable) {
+                if(!listProcessListeners.isEmpty()) {
+                    for (OnSyncFileListProcessListener listener : listProcessListeners) {
+                        listener.onSyncFileListProcessFailed(throwable);
+                    }
+                }
+            }
+        });
         workerThread.start();
     }
 
@@ -82,9 +101,7 @@ public class SyncFileListProcess {
                 if (nameSubPos > 0) {
                     String filesDirName = filesDir.getAbsolutePath().substring(0, nameSubPos);
                     RemoteFolderDoc remoteFolderDoc = new RemoteFolderDoc(indexMaximumSize, indexHiddenFiles, new File(filesDirName));
-
-                    String[] dividerArr = filesDirName.split("/");
-                    drives.put(dividerArr[dividerArr.length - 1], remoteFolderDoc.getLists());
+                    drives.put(filesDirName, remoteFolderDoc.getLists());
                 }
             }
         }
@@ -98,11 +115,17 @@ public class SyncFileListProcess {
         drives.put(ReFileConst.DATA_TYPE_LAST_MODIFIED, Calendar.getInstance().getTimeInMillis());
         final String finalFileListString = new JSONObject(drives).toString();
 
+        Refoler.RequestPacket.Builder requestPacket = Refoler.RequestPacket.newBuilder();
+        requestPacket.setActionName(RecordConst.SERVICE_ACTION_TYPE_POST);
+        requestPacket.addDevice(DeviceWrapper.getSelfDeviceInfo(context));
+        requestPacket.setExtraData(finalFileListString);
 
-        if (!listProcessListeners.isEmpty()) {
-            for (OnSyncFileListProcessListener listener : listProcessListeners) {
-                listener.onSyncFileListProcessFinished();
+        JsonRequest.postRequestPacket(context, RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST, requestPacket, receivedPacket -> {
+            if (!listProcessListeners.isEmpty()) {
+                for (OnSyncFileListProcessListener listener : listProcessListeners) {
+                    listener.onSyncFileListProcessFinished(receivedPacket);
+                }
             }
-        }
+        });
     }
 }

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">ReFoler</string>
+    <string name="sync_notification_title">Synchronize file list</string>
+    <string name="sync_notification_content">Indexing &amp; Uploading device file list…</string>
 </resources>
