@@ -1,0 +1,104 @@
+plugins {
+    alias(libs.plugins.android.application)
+    id 'com.google.gms.google-services'
+    id 'kotlin-android'
+    id 'com.google.protobuf'
+}
+
+android {
+    namespace 'com.refoler.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.refoler.app"
+        minSdk 28
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+
+        multiDexEnabled true
+        ndk.abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        final var proguardMode = {
+            shrinkResources true
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+        release proguardMode
+        var testProguardMode = false
+
+        if (testProguardMode) {
+            debug proguardMode
+        } else debug {
+            minifyEnabled false
+        }
+    }
+
+    dependenciesInfo {
+        includeInApk false
+        includeInBundle false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlin {
+        jvmToolchain {
+            languageVersion.set(JavaLanguageVersion.of("17"))
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+        aidl false
+    }
+    flavorDimensions
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:4.29.2'
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {}
+                kotlin {}
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation libs.appcompat
+    implementation libs.material
+
+    implementation platform(libs.firebase.bom)
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-storage'
+
+    implementation "com.google.protobuf:protobuf-java:4.29.3"
+    implementation "com.google.protobuf:protobuf-java-util:4.29.3"
+    implementation "com.google.protobuf:protobuf-kotlin:4.29.3"
+
+    implementation "io.ktor:ktor-client-core:3.0.3"
+    implementation "io.ktor:ktor-client-okhttp:3.0.3"
+    implementation "io.ktor:ktor-client-websockets:3.0.3"
+    implementation "io.ktor:ktor-client-cio-jvm:3.0.3"
+
+    testImplementation libs.junit
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.espresso.core
+
+    //noinspection DifferentStdlibGradleVersion
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21'
+}

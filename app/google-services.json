@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "875424112651",
+    "project_id": "refoler-3a15d",
+    "storage_bucket": "refoler-3a15d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:875424112651:android:e51f6ba2cc8a96b103270e",
+        "android_client_info": {
+          "package_name": "com.refoler.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "875424112651-eijrb0qadu3hc2dlf7sciofppv0i5j6a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.refoler.app",
+            "certificate_hash": "3b7e09976c3fdc9d8a814b48c8af459077362870"
+          }
+        },
+        {
+          "client_id": "875424112651-0m7e1n8kpnrcqdma6varhh5bv2uv9lsp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBAHRTB58eCZDskIRY0ModPsuttVX5v2Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "875424112651-0m7e1n8kpnrcqdma6varhh5bv2uv9lsp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
