@@ -6,13 +6,12 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 import com.refoler.app.R;
-import com.refoler.app.backend.consts.ResponseWrapper;
+import com.refoler.app.backend.ResponseWrapper;
 import com.refoler.app.process.SyncFileListProcess;
 import com.refoler.app.ui.PrefsKeyConst;
 
@@ -23,17 +22,19 @@ public class SyncFileListService extends Service {
     private final SyncFileListProcess.OnSyncFileListProcessListener syncFileListener = new SyncFileListProcess.OnSyncFileListProcessListener() {
         @Override
         public void onSyncFileListProcessFinished(ResponseWrapper responseWrapper) {
-            Log.d("ddd", "Finished");
             stopSelf();
         }
 
         @Override
         public void onSyncFileListProcessFailed(Throwable throwable) {
-            Log.d("ddd", "Failed!");
             throwable.printStackTrace();
             stopSelf();
         }
     };
+
+    public static void startService(Context context) {
+        context.startForegroundService(new Intent(context, SyncFileListService.class));
+    }
 
     @Override
     public void onCreate() {

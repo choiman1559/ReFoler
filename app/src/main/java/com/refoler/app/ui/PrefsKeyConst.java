@@ -12,4 +12,8 @@ public class PrefsKeyConst {
     public static final String PREFS_KEY_AUTO_BACKUP_INTERVAL = "autoBackupInterval";
     public static final String PREFS_KEY_AUTO_BACKUP_CHARGING = "autoBackupCharging";
     public static final String PREFS_KEY_SERVICE_ENABLED = "serviceEnabled";
+    public static final String PREFS_KEY_DEVICE_LIST_CACHE = "deviceListCache";
+
+    public static final String DIR_FILE_LIST_CACHE = "file_list";
+    public static final String DIR_FILE_DATA_CACHE = "file_data";
 }

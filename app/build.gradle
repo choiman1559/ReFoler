@@ -84,6 +84,8 @@ protobuf {
 dependencies {
     implementation libs.appcompat
     implementation libs.material
+    implementation libs.preference.ktx
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01"
 
     implementation platform(libs.firebase.bom)
     implementation 'com.google.firebase:firebase-auth'

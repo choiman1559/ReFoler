@@ -1,4 +1,4 @@
-package com.refoler.app.backend.consts;
+package com.refoler.app.backend;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -35,6 +35,12 @@ public class ResponseWrapper {
         Refoler.ResponsePacket.Builder responsePacketBuilder = Refoler.ResponsePacket.newBuilder();
         JsonFormat.parser().merge(rawData, responsePacketBuilder);
         return responsePacketBuilder.build();
+    }
+
+    public static Refoler.RequestPacket parseRequestPacket(String rawData) throws IOException {
+        Refoler.RequestPacket.Builder requestPacketBuilder = Refoler.RequestPacket.newBuilder();
+        JsonFormat.parser().merge(rawData, requestPacketBuilder);
+        return requestPacketBuilder.build();
     }
 }
 

@@ -2,4 +2,17 @@
     <string name="app_name">ReFoler</string>
     <string name="sync_notification_title">Synchronize file list</string>
     <string name="sync_notification_content">Indexing &amp; Uploading device file list…</string>
+    <string name="search_nav_hint">Search Files…</string>
+    <string name="nav_menu_settings">Settings</string>
+    <string name="nav_menu_account">Account</string>
+    <string name="nav_menu_info">Application Infos</string>
+    <string name="button_refolerai">ReFoler AI</string>
+    <string name="available_devices">Available devices</string>
+    <string name="nav_title_settings">Settings</string>
+    <string name="nav_desc_settings">General Preferences</string>
+    <string name="nav_title_account">Accounts</string>
+    <string name="nav_desc_account">Service toggle, Login</string>
+    <string name="nav_title_info">App information</string>
+    <string name="nav_desc_info">Status, Legal information</string>
+    <string name="foreground_description_fcm">A service used to interact with other devices over the FCM network</string>
 </resources>

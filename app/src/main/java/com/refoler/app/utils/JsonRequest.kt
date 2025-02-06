@@ -5,7 +5,7 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.refoler.Refoler
 import com.refoler.app.Applications
 import com.refoler.app.backend.consts.PacketConst
-import com.refoler.app.backend.consts.ResponseWrapper
+import com.refoler.app.backend.ResponseWrapper
 import com.refoler.app.ui.PrefsKeyConst
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -57,7 +57,8 @@ class JsonRequest {
         fun postRequest(context: Context, serviceType: String, body: String, event: OnReceivedCompleteListener?) {
             Thread {
                 runBlocking {
-                    val responsePacket = ResponseWrapper()
+                    val responsePacket =
+                        ResponseWrapper()
                     val client = HttpClient().get(buildApiUrl(serviceType)) {
                         headers {
                             append(

@@ -9,7 +9,7 @@ import android.content.Context;
 import androidx.core.app.NotificationCompat;
 
 import com.refoler.app.R;
-import com.refoler.app.backend.consts.ResponseWrapper;
+import com.refoler.app.backend.ResponseWrapper;
 import com.refoler.app.process.SyncFileListProcess;
 import com.refoler.app.ui.PrefsKeyConst;
 
@@ -32,7 +32,6 @@ public class SyncFileListJob extends JobService {
 
     @Override
     public boolean onStartJob(JobParameters params) {
-        //TODO: Show notification first
         NotificationChannel channel = new NotificationChannel(PrefsKeyConst.NOTIFICATION_SYNC_TASK_CHANNEL, PrefsKeyConst.NOTIFICATION_SYNC_TASK_NAME, NotificationManager.IMPORTANCE_DEFAULT);
         mNotifyManager.createNotificationChannel(channel);
 
@@ -45,8 +44,8 @@ public class SyncFileListJob extends JobService {
                 .setAutoCancel(false)
                 .setContentTitle(getString(R.string.sync_notification_title))
                 .setContentText(getString(R.string.sync_notification_content));
-        mNotifyManager.notify(SyncFileListProcess.getInstance().hashCode(), mBuilder.build());
 
+        mNotifyManager.notify(SyncFileListProcess.getInstance().hashCode(), mBuilder.build());
         SyncFileListProcess syncFileListProcess = SyncFileListProcess.getInstance();
         syncFileListProcess.addListener(syncFileListener);
 

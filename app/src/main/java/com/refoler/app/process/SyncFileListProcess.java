@@ -10,7 +10,7 @@ import com.refoler.Refoler;
 import com.refoler.app.Applications;
 import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.consts.RecordConst;
-import com.refoler.app.backend.consts.ResponseWrapper;
+import com.refoler.app.backend.ResponseWrapper;
 import com.refoler.app.process.db.ReFileConst;
 import com.refoler.app.process.db.RemoteFolderDoc;
 import com.refoler.app.ui.PrefsKeyConst;
@@ -79,6 +79,7 @@ public class SyncFileListProcess {
                     for (OnSyncFileListProcessListener listener : listProcessListeners) {
                         listener.onSyncFileListProcessFailed(throwable);
                     }
+                    listProcessListeners.clear();
                 }
             }
         });
@@ -109,6 +110,7 @@ public class SyncFileListProcess {
             for (OnSyncFileListProcessListener listener : listProcessListeners) {
                 listener.onSyncFileListProcessFailed(new FileNotFoundException(String.format("Base file folder is not available: %s", basePath)));
             }
+            listProcessListeners.clear();
             return;
         }
 
@@ -125,6 +127,7 @@ public class SyncFileListProcess {
                 for (OnSyncFileListProcessListener listener : listProcessListeners) {
                     listener.onSyncFileListProcessFinished(receivedPacket);
                 }
+                listProcessListeners.clear();
             }
         });
     }

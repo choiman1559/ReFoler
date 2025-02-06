@@ -1,40 +1,52 @@
 package com.refoler.app.ui;
 
-import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.Button;
+import android.util.AttributeSet;
+import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.ActionBar;
 
-import com.refoler.Refoler;
+import com.kieronquinn.monetcompat.app.MonetCompatActivity;
+import com.kieronquinn.monetcompat.core.MonetCompat;
 import com.refoler.app.R;
-import com.refoler.app.backend.DeviceWrapper;
-import com.refoler.app.backend.consts.RecordConst;
-import com.refoler.app.process.service.SyncFileListService;
-import com.refoler.app.utils.JsonRequest;
+import com.refoler.app.ui.actions.MainFragment;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends MonetCompatActivity {
+
+    private MonetCompat monet;
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull String name, @NonNull Context context, @NonNull AttributeSet attrs) {
+        MonetCompat.setup(context);
+        monet = MonetCompat.getInstance();
+        monet.updateMonetColors();
+        return super.onCreateView(name, context, attrs);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        monet = null;
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button uploadFileNow = findViewById(R.id.uploadFileNow);
-        Button registerDeviceNow = findViewById(R.id.registerDeviceNow);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(false);
+        }
 
-        uploadFileNow.setOnClickListener((v) -> {
-            startService(new Intent(this, SyncFileListService.class));
-        });
-
-        registerDeviceNow.setOnClickListener((v) -> {
-            Refoler.RequestPacket.Builder requestBuilder = Refoler.RequestPacket.newBuilder();
-            requestBuilder.setActionName(RecordConst.SERVICE_ACTION_TYPE_POST);
-            requestBuilder.addDevice(DeviceWrapper.getSelfDeviceInfo(this));
-            JsonRequest.postRequestPacket(this, RecordConst.SERVICE_TYPE_DEVICE_REGISTRATION, requestBuilder, (response) -> {
-                Log.d("BackendImplementation", "Device Registered!");
-            });
-        });
+        MainFragment mainFragment = new MainFragment();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.contentFrameMain, mainFragment)
+                .commit();
     }
 }

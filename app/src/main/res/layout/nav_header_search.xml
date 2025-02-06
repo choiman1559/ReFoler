@@ -1,0 +1,57 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="@drawable/round_corner"
+    android:backgroundTint="@color/ui_bg_surface"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    tools:ignore="ContentDescription">
+
+    <ImageButton
+        android:id="@+id/sideNavButton"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="16dp"
+        android:src="@drawable/ic_fluent_line_horizontal_3_24_regular"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/ui_fg" />
+
+    <TextView
+        android:id="@+id/searchHint"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:focusable="false"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="16dp"
+        android:gravity="center"
+        android:src="@drawable/ic_fluent_line_horizontal_3_24_regular"
+        android:text="@string/search_nav_hint"
+        android:textColor="@color/ui_fg_secondary"
+        app:layout_constraintStart_toEndOf="@id/sideNavButton"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/ui_fg" />
+
+    <ImageButton
+        android:id="@+id/searchButton"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="16dp"
+        android:src="@drawable/ic_fluent_search_24_regular"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/ui_fg" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -29,5 +29,6 @@ public class StartActivity extends AppCompatActivity {
         prefs.edit().putString(PrefsKeyConst.PREFS_KEY_UID, "test_uid01").apply();
 
         startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 }

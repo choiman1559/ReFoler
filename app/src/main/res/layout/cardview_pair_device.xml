@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/baseLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/round_corner"
+    android:backgroundTint="@color/ui_bg_surface"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:paddingVertical="8dp"
+    tools:ignore="ContentDescription">
+
+    <ImageView
+        android:id="@+id/deviceIcon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="12dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_fluent_phone_24_regular"
+        app:tint="@color/ui_fg" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:layout_marginVertical="5dp"
+        android:layout_marginStart="74dp"
+        android:layout_marginEnd="10dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/deviceName"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fontFamily="@font/sans"
+            android:gravity="start|center"
+            android:maxEms="10"
+            android:singleLine="true"
+            android:textColor="@color/ui_fg"
+            android:textSize="20sp"
+            tools:text="TestDevice NotePad 14 Pro Plus" />
+
+        <TextView
+            android:id="@+id/deviceStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:ellipsize="marquee"
+            android:gravity="start"
+            android:singleLine="true"
+            android:textColor="@color/ui_fg_secondary"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="Connecting..." />
+    </LinearLayout>
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="30dp"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="10dp"
+        android:layout_toStartOf="@id/deviceDetail"
+        android:background="@color/ui_bg_toolbar" />
+
+    <ImageView
+        android:id="@+id/deviceDetail"
+        android:layout_width="wrap_content"
+        android:layout_height="47dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="8dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        app:srcCompat="@drawable/ic_more_vert_black_24dp"
+        app:tint="@color/ui_accent" />
+</RelativeLayout>
