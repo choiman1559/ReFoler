@@ -42,8 +42,7 @@
         </activity>
 
         <activity android:name=".ui.MainActivity"/>
-        <activity android:name=".ui.actions.FileDetailActivity"/>
-        <activity android:name=".ui.actions.ReFileActivity"/>
+        <activity android:name=".ui.holder.SideHolderActivity"/>
 
         <service
             android:name=".process.service.SyncFileListJob"

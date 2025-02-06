@@ -1,10 +1,14 @@
-package com.refoler.app.ui.actions;
+package com.refoler.app.ui.actions.side;
 
 import android.annotation.SuppressLint;
-import android.content.Intent;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -12,8 +16,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -22,10 +28,11 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.refoler.Refoler;
 import com.refoler.app.Applications;
 import com.refoler.app.R;
-import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.consts.PacketConst;
 import com.refoler.app.process.db.ReFileCache;
 import com.refoler.app.process.db.RemoteFile;
+import com.refoler.app.ui.holder.SideFragment;
+import com.refoler.app.ui.holder.SideFragmentHolder;
 import com.refoler.app.ui.utils.ToastHelper;
 
 import org.json.JSONException;
@@ -39,9 +46,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
-public class ReFileActivity extends AppCompatActivity {
+public class ReFileFragment extends SideFragment {
 
+    AppCompatActivity mContext;
     SharedPreferences prefs;
     Refoler.Device device;
     RemoteFile allFileList;
@@ -55,12 +64,16 @@ public class ReFileActivity extends AppCompatActivity {
     TextView remoteFileStateDescription;
     ProgressBar remoteFileStateProgress;
 
+    public ReFileFragment(Refoler.Device device) {
+        this.device = device;
+    }
+
     OnBackPressedCallback backPressedCallback = new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
             if (lastRemoteFile != null) {
                 if (allFileList.getPath().equals(lastRemoteFile.getPath())) {
-                    ReFileActivity.this.finish();
+                    finishAction();
                 } else {
                     lastRemoteFile = lastRemoteFile.getParent();
                     loadFileListLayout();
@@ -69,60 +82,91 @@ public class ReFileActivity extends AppCompatActivity {
         }
     };
 
-    @SuppressLint("SetTextI18n")
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_refiler);
-        getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.ui_bg_toolbar));
-        prefs = Applications.getPrefs(this);
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof AppCompatActivity) mContext = (AppCompatActivity) context;
+        else throw new RuntimeException("Can't get Activity instanceof Context!");
+    }
 
-        Intent intent = getIntent();
-        device = DeviceWrapper.detachIntentDevice(intent);
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_refiler, container, false);
+    }
 
-        remoteFileScrollView = findViewById(R.id.remoteFileScrollView);
-        remoteFileRefreshLayout = findViewById(R.id.remoteFileRefreshLayout);
-        remoteFileLayout = findViewById(R.id.remoteFileLayout);
-        remoteFileStateLayout = findViewById(R.id.remoteFileStateLayout);
-        remoteFileErrorEmoji = findViewById(R.id.remoteFileErrorEmoji);
-        remoteFileStateProgress = findViewById(R.id.remoteFileStateProgress);
-        remoteFileStateDescription = findViewById(R.id.remoteFileStateDescription);
+    @NonNull
+    @Override
+    public String getFragmentId() {
+        return String.format("%s:%s", ReFileFragment.class.getName(), device.getDeviceId());
+    }
+
+    private void finishAction() {
+        if (Applications.isLayoutTablet(mContext)) {
+            SideFragmentHolder.getInstance().popFragment(mContext);
+        } else {
+            mContext.finish();
+        }
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if(!Applications.isLayoutTablet(mContext)) {
+            mContext.getWindow().setStatusBarColor(ContextCompat.getColor(mContext, R.color.ui_bg_toolbar));
+        }
+        prefs = Applications.getPrefs(mContext);
+
+        remoteFileScrollView = view.findViewById(R.id.remoteFileScrollView);
+        remoteFileRefreshLayout = view.findViewById(R.id.remoteFileRefreshLayout);
+        remoteFileLayout = view.findViewById(R.id.remoteFileLayout);
+        remoteFileStateLayout = view.findViewById(R.id.remoteFileStateLayout);
+        remoteFileErrorEmoji = view.findViewById(R.id.remoteFileErrorEmoji);
+        remoteFileStateProgress = view.findViewById(R.id.remoteFileStateProgress);
+        remoteFileStateDescription = view.findViewById(R.id.remoteFileStateDescription);
 
         remoteFileLayout.setVisibility(View.GONE);
         remoteFileErrorEmoji.setVisibility(View.GONE);
         remoteFileScrollView.getViewTreeObserver().addOnScrollChangedListener(() -> remoteFileRefreshLayout.setEnabled(remoteFileLayout.getVisibility() == View.VISIBLE && remoteFileScrollView.getScrollY() == 0));
 
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener((v) -> this.finish());
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener((v) -> finishAction());
+        toolbar.setTitle(device.getDeviceName());
+
+        if(Applications.isLayoutTablet(mContext)) {
+            Drawable drawable = AppCompatResources.getDrawable(mContext,R.drawable.round_corner_toolbar);
+            Objects.requireNonNull(drawable).setColorFilter(mContext.getColor(R.color.ui_bg),  PorterDuff.Mode.SRC_ATOP);
+            toolbar.setBackground(drawable);
+        }
 
         remoteFileRefreshLayout.setOnRefreshListener(() -> {
             remoteFileRefreshLayout.setRefreshing(false);
             if(remoteFileStateProgress.getVisibility() == View.GONE) {
                 loadQueryFromDB(true);
             } else {
-                ToastHelper.show(this, "Working in progress!", ToastHelper.LENGTH_SHORT);
+                ToastHelper.show(mContext, "Working in progress!", ToastHelper.LENGTH_SHORT);
             }
         });
 
-        getOnBackPressedDispatcher().addCallback(backPressedCallback);
+        mContext.getOnBackPressedDispatcher().addCallback(backPressedCallback);
         loadQueryFromDB(false);
     }
 
     void loadQueryFromDB(boolean renewCache) {
         showProgress("Retrieving file list from database...");
-        ReFileCache.getInstance(this).fetchList(renewCache, device, new ReFileCache.ReFileFetchListener() {
+        ReFileCache.getInstance(mContext).fetchList(renewCache, device, new ReFileCache.ReFileFetchListener() {
             @Override
             public void onReceive(@Nullable RemoteFile remoteFile) {
                 allFileList = remoteFile;
                 if(lastRemoteFile != null) {
                     findLastMatchedFolder();
                 }
-                runOnUiThread(ReFileActivity.this::loadFileListLayout);
+                mContext.runOnUiThread(ReFileFragment.this::loadFileListLayout);
             }
 
             @Override
             public void onEmpty() {
-                runOnUiThread(() -> {
+                mContext.runOnUiThread(() -> {
                     try {
                         loadFreshQuery();
                     } catch (JSONException | IOException e) {
@@ -140,7 +184,7 @@ public class ReFileActivity extends AppCompatActivity {
 
     void showErrorException(Exception e) {
         e.printStackTrace();
-        runOnUiThread(() -> showError(e.getMessage()));
+        mContext.runOnUiThread(() -> showError(e.getMessage()));
     }
 
     void findLastMatchedFolder() {
@@ -177,11 +221,11 @@ public class ReFileActivity extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     void loadFreshQuery() throws JSONException, IOException {
         showProgress("Querying file list from target device...\n\nThis task may take some time");
-        ReFileCache.getInstance(this).requestDeviceFileList(device, responsePacket -> {
+        ReFileCache.getInstance(mContext).requestDeviceFileList(device, responsePacket -> {
             if(responsePacket.getStatus().equals(PacketConst.STATUS_OK)) {
-                runOnUiThread(() -> loadQueryFromDB(true));
+                mContext.runOnUiThread(() -> loadQueryFromDB(true));
             } else {
-                runOnUiThread(() -> showError(responsePacket.getErrorCause()));
+                mContext.runOnUiThread(() -> showError(responsePacket.getErrorCause()));
             }
         });
     }
@@ -193,7 +237,7 @@ public class ReFileActivity extends AppCompatActivity {
 
         if (lastRemoteFile == null) lastRemoteFile = allFileList;
         if (!lastRemoteFile.getPath().equals(allFileList.getPath())) {
-            RelativeLayout goParentLayout = (RelativeLayout) View.inflate(this, R.layout.cardview_refile_item, null);
+            RelativeLayout goParentLayout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
             new RemoteFileHolder(null, goParentLayout, true, false);
             goParentLayout.setOnClickListener(v -> {
                 lastRemoteFile = lastRemoteFile.getParent();
@@ -204,7 +248,7 @@ public class ReFileActivity extends AppCompatActivity {
         }
 
         if(lastRemoteFile.isIndexSkipped()) {
-            RelativeLayout skippedLayout = (RelativeLayout) View.inflate(this, R.layout.cardview_refile_item, null);
+            RelativeLayout skippedLayout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
             new RemoteFileHolder(lastRemoteFile, skippedLayout, false, true);
             remoteFileLayout.addView(skippedLayout);
         } else {
@@ -212,14 +256,12 @@ public class ReFileActivity extends AppCompatActivity {
             ArrayList<RemoteFileHolder> files = new ArrayList<>();
 
             for (RemoteFile file : lastRemoteFile.getList()) {
-                RelativeLayout layout = (RelativeLayout) View.inflate(this, R.layout.cardview_refile_item, null);
+                RelativeLayout layout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
                 RemoteFileHolder holder = new RemoteFileHolder(file, layout, false, false);
 
                 layout.setOnClickListener(v -> {
                     if (file.isFile()) {
-                        Intent fileDetailIntent = new Intent(this, FileDetailActivity.class);
-                        fileDetailIntent.putExtra("file" /*TODO: Change to const*/, file);
-                        startActivity(DeviceWrapper.attachIntentDevice(fileDetailIntent, device));
+                        SideFragmentHolder.getInstance().pushFragment(mContext, new FileDetailFragment(device, file, holder.remoteFileIconId));
                     } else {
                         lastRemoteFile = file;
                         loadFileListLayout();

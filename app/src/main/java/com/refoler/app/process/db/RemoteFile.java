@@ -18,7 +18,7 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
     List<RemoteFile> list;
 
     public RemoteFile(JSONObject jsonObject) throws JSONException {
-        path = "/storage";
+        path = "";
         list = new ArrayList<>();
 
         for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
@@ -28,7 +28,7 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
             if (key.equals(ReFileConst.DATA_TYPE_LAST_MODIFIED)) {
                 lastModified = (Long) obj;
             } else {
-                list.add(new RemoteFile(this, (JSONObject) obj, path + "/" + key));
+                list.add(new RemoteFile(this, (JSONObject) obj, key));
             }
         }
     }

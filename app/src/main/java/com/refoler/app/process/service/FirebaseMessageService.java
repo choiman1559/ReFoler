@@ -31,6 +31,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class FirebaseMessageService extends FirebaseMessagingService {
 
@@ -56,7 +57,7 @@ public class FirebaseMessageService extends FirebaseMessagingService {
     }
 
     private void processMessage(JSONObject message) throws JSONException, IOException {
-        if(BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG) {
             Log.d("FirebaseMessageService", message.toString());
         }
 
@@ -79,6 +80,9 @@ public class FirebaseMessageService extends FirebaseMessagingService {
             case RecordConst.SERVICE_TYPE_TRANSFER_FILE -> {
                 // TODO: Download file blob
             }
+            case DirectActionConst.SERVICE_TYPE_FILE_ACTION -> Objects.requireNonNull(FileAction
+                    .getInstance().requestListenerMap
+                    .get(responsePacket.getExtraData(0))).onReceive(responsePacket);
         }
     }
 
@@ -122,6 +126,8 @@ public class FirebaseMessageService extends FirebaseMessagingService {
             case RecordConst.SERVICE_TYPE_TRANSFER_FILE -> {
                 // TODO: Upload file blob
             }
+            case DirectActionConst.SERVICE_TYPE_FILE_ACTION ->
+                    FileActionResponse.responseActions(this, requestPacket);
         }
     }
 

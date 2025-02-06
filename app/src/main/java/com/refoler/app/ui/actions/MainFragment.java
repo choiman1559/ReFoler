@@ -2,7 +2,6 @@ package com.refoler.app.ui.actions;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -32,6 +31,8 @@ import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.consts.RecordConst;
 import com.refoler.app.process.service.SyncFileListService;
 import com.refoler.app.ui.PrefsKeyConst;
+import com.refoler.app.ui.actions.side.ReFileFragment;
+import com.refoler.app.ui.holder.SideFragmentHolder;
 import com.refoler.app.ui.utils.ToastHelper;
 import com.refoler.app.utils.JsonRequest;
 
@@ -92,6 +93,8 @@ public class MainFragment extends Fragment {
 
         reloadDeviceListButton.setOnClickListener((v) -> {
             reloadProgressBar.setVisibility(View.VISIBLE);
+            SideFragmentHolder.getInstance().clearFragment(mContext);
+
             try {
                 loadDeviceList(true);
             } catch (JSONException | IOException e) {
@@ -219,24 +222,13 @@ public class MainFragment extends Fragment {
         public RelativeLayout createView() {
             this.deviceIcon.setImageResource(DeviceWrapper.getDeviceFormBitmap(device.getDeviceFormfactor()));
             this.deviceName.setText(device.getDeviceName());
-
-            this.itemHolderView.setOnClickListener((v) -> {
-                context.startActivity(DeviceWrapper.attachIntentDevice(new Intent(context, ReFileActivity.class), device));
-            });
+            this.itemHolderView.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(context, new ReFileFragment(device)));
 
             this.deviceDetail.setOnClickListener((v) -> {
                 // TODO: Add device detail screen
             });
 
             return itemHolderView;
-        }
-
-        public void setFocused(boolean isFocused) {
-            // TODO: Implement focused color change for tablet density
-        }
-
-        public boolean isFocused() {
-            return false;
         }
     }
 }

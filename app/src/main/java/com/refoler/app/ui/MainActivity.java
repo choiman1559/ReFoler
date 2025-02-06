@@ -8,11 +8,14 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
+import androidx.core.content.ContextCompat;
 
 import com.kieronquinn.monetcompat.app.MonetCompatActivity;
 import com.kieronquinn.monetcompat.core.MonetCompat;
+import com.refoler.app.Applications;
 import com.refoler.app.R;
 import com.refoler.app.ui.actions.MainFragment;
+import com.refoler.app.ui.holder.SideFragmentHolder;
 
 public class MainActivity extends MonetCompatActivity {
 
@@ -38,12 +41,19 @@ public class MainActivity extends MonetCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if(Applications.isLayoutTablet(this)) {
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.ui_bg_toolbar));
+            getWindow().setNavigationBarColor(ContextCompat.getColor(this, R.color.ui_bg_toolbar));
+        }
+
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(false);
         }
 
+        SideFragmentHolder.initInstance(this);
         MainFragment mainFragment = new MainFragment();
+
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.contentFrameMain, mainFragment)

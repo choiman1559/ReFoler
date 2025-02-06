@@ -1,27 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.appcompat.widget.LinearLayoutCompat
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginTop="28dp"
     android:orientation="horizontal"
+    android:background="@color/ui_bg_toolbar"
+    android:fitsSystemWindows="true"
     android:weightSum="1">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/contentFrameMain"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginHorizontal="4dp"
-        android:layout_weight="0.5"
+        android:layout_marginHorizontal="14dp"
+        android:layout_marginBottom="14dp"
+        android:layout_weight="0.48"
+        android:background="@drawable/round_corner"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/contentFrameSub"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginHorizontal="4dp"
-        android:layout_weight="0.5"
+        android:layout_marginHorizontal="14dp"
+        android:layout_marginBottom="14dp"
+        android:layout_weight="0.52"
+        android:background="@drawable/round_corner"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
 </androidx.appcompat.widget.LinearLayoutCompat>

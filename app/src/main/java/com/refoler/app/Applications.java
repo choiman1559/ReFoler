@@ -15,6 +15,10 @@ public class Applications extends Application {
         super.onCreate();
     }
 
+    public static boolean isLayoutTablet(Context context) {
+        return context.getResources().getBoolean(R.bool.is_tablet);
+    }
+
     public static SharedPreferences getPrefs(Context context, String SUFFIX) {
         return context.getSharedPreferences(String.format("%s_%s", PREFS_PACKAGE, SUFFIX), Context.MODE_PRIVATE);
     }

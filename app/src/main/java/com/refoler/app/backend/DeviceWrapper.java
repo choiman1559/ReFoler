@@ -13,7 +13,6 @@ import android.os.Build;
 import com.google.protobuf.util.JsonFormat;
 import com.refoler.Refoler;
 import com.refoler.app.Applications;
-import com.refoler.app.R;
 import com.refoler.app.ui.PrefsKeyConst;
 
 import java.io.IOException;
@@ -112,7 +111,7 @@ public class DeviceWrapper {
                 break;
 
             case Configuration.UI_MODE_TYPE_NORMAL:
-                if (context.getResources().getBoolean(R.bool.is_tablet)) {
+                if (Applications.isLayoutTablet(context)) {
                     deviceFormfactor = Refoler.DeviceFormfactor.DEVICE_FORM_TABLET;
                 } else {
                     deviceFormfactor = Refoler.DeviceFormfactor.DEVICE_FORM_SMARTPHONE;
