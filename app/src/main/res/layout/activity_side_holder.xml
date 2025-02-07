@@ -6,13 +6,13 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:transitionGroup="true"
-    app:layout_scrollFlags="scroll|enterAlways"
-    app:statusBarBackground="@color/ui_bg_toolbar">
+    app:layout_scrollFlags="scroll|enterAlways">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/contentFrameSub"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

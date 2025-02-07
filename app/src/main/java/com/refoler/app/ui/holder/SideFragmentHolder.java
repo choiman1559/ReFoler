@@ -42,8 +42,10 @@ public class SideFragmentHolder {
     }
 
     public void pushFragment(Context context, SideFragment fragment) {
-        fragmentStack.push(fragment);
         if (Applications.isLayoutTablet(context)) {
+            if (lastCommitedFragment != null) {
+                fragmentStack.push(lastCommitedFragment);
+            }
             commitFinalize(castActivity(context), fragment);
         } else {
             SideHolderActivity.onSideHolderActivityCreateListener = activity -> commitFinalize(activity, fragment);
@@ -57,17 +59,15 @@ public class SideFragmentHolder {
     }
 
     public void popFragment(AppCompatActivity activity) {
-        SideFragment fragment = fragmentStack.pop();
-        lastCommitedFragment = null;
-
-        if (fragmentStack.size() <= 1) {
-            if (Applications.isLayoutTablet(activity)) {
+        if (Applications.isLayoutTablet(activity)) {
+            if (fragmentStack.isEmpty()) {
                 initInstance(activity);
             } else {
-                activity.finish();
+                SideFragment fragment = fragmentStack.pop();
+                commitFinalize(activity, fragment);
             }
         } else {
-            commitFinalize(activity, fragment);
+            activity.finish();
         }
     }
 
@@ -80,6 +80,7 @@ public class SideFragmentHolder {
         activity.getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.contentFrameSub, fragment)
+                .addToBackStack(null)
                 .commit();
     }
 

@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,12 +19,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.refoler.Refoler;
-import com.refoler.app.Applications;
 import com.refoler.app.R;
 import com.refoler.app.process.db.RemoteFile;
 import com.refoler.app.process.service.FileAction;
 import com.refoler.app.ui.holder.SideFragment;
-import com.refoler.app.ui.holder.SideFragmentHolder;
 import com.refoler.app.ui.utils.PrefsCard;
 import com.refoler.app.ui.utils.ToastHelper;
 import com.refoler.app.utils.BillingHelper;
@@ -61,8 +60,21 @@ public class FileDetailFragment extends SideFragment {
     }
 
     @Override
+    public OnBackPressedCallback getOnBackDispatcher() {
+        return new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finishScreen();
+            }
+        };
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
+        setToolbar(toolbar);
+
         PrefsCard fileNameItem = view.findViewById(R.id.fileNameItem);
         PrefsCard filePathItem = view.findViewById(R.id.filePathItem);
         PrefsCard fileDateItem = view.findViewById(R.id.fileDateItem);
@@ -77,23 +89,18 @@ public class FileDetailFragment extends SideFragment {
         boolean isSubscribed = BillingHelper.getInstance().isSubscribedOrDebugBuild();
         if (remoteFile.getSize() > (isSubscribed ? 2147483648L : 104857600)) {
             downloadButton.setEnabled(false);
-            bigFileWarning = isSubscribed ? """
-                                    The file is too large to download!
-                                    Maximum download file size is 2GB.
-                                    """ : """
-                                    The file is too large to download!
-                                    The maximum download file size is 100MB,
-                                    increasing up to 2GB with subscription.
-                                    """;
+            bigFileWarning = isSubscribed ?
+                    getString(R.string.refoler_detail_size_limit_sub) :
+                    getString(R.string.refoler_detail_size_limit_unsub);
         }
 
         fileNameItem.setIconDrawable(fileIconResId);
         fileNameItem.setDescription(remoteFile.getName());
         filePathItem.setDescription(remoteFile.getPath().replace(remoteFile.getName(), ""));
-        fileDateItem.setDescription(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault()).format(remoteFile.getLastModified()));
+        fileDateItem.setDescription(new SimpleDateFormat(getString(R.string.default_date_format), Locale.getDefault()).format(remoteFile.getLastModified()));
         fileSizeItem.setDescription(remoteFile.getSize() + " Bytes");
 
-        if(bigFileWarning.isEmpty()) {
+        if (bigFileWarning.isEmpty()) {
             waringLayout.setVisibility(View.GONE);
         } else {
             waringTextView.setText(bigFileWarning);
@@ -104,21 +111,21 @@ public class FileDetailFragment extends SideFragment {
         });
 
         fileHashItem.setOnClickListener(v -> {
-            if(isHashReceived) {
+            if (isHashReceived) {
                 copyInfoClip(fileHashItem.getDescriptionString());
             } else {
-                fileHashItem.setDescription("Getting file hash...");
+                fileHashItem.setDescription(getString(R.string.refoler_detail_process_hash));
 
                 try {
                     FileAction.getInstance().requestFileHash(mContext, device, remoteFile, (responsePacket -> {
                         String hash = responsePacket.getExtraDataCount() >= 2 ? responsePacket.getExtraData(1) : null;
                         mContext.runOnUiThread(() -> fileHashItem.setDescription(Objects.requireNonNullElse(hash, "Error while getting file hash")));
-                        if(hash != null) {
+                        if (hash != null) {
                             isHashReceived = true;
                         }
                     }));
                 } catch (Exception e) {
-                    fileHashItem.setDescription("Error while getting file hash");
+                    fileHashItem.setDescription(getString(R.string.refoler_detail_error_hash));
                 }
             }
         });
@@ -127,29 +134,20 @@ public class FileDetailFragment extends SideFragment {
         filePathItem.setOnClickListener(v -> copyInfoClip(filePathItem.getDescriptionString()));
         fileDateItem.setOnClickListener(v -> copyInfoClip(fileDateItem.getDescriptionString()));
         fileSizeItem.setOnClickListener(v -> copyInfoClip(String.valueOf(remoteFile.getSize())));
-
-        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener((v) -> {
-            if (Applications.isLayoutTablet(mContext)) {
-                SideFragmentHolder.getInstance().popFragment(mContext);
-            } else {
-                mContext.finish();
-            }
-        });
     }
 
     void copyInfoClip(String data) {
         ClipboardManager clipboard = (ClipboardManager) mContext.getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("File Details", data);
+        ClipData clip = ClipData.newPlainText(getString(R.string.refoler_detail_title), data);
         clipboard.setPrimaryClip(clip);
-        ToastHelper.show(mContext, "Copied!", "Okay", ToastHelper.LENGTH_SHORT);
+        ToastHelper.show(mContext, getString(R.string.refoler_detail_copied), getString(R.string.default_string_okay), ToastHelper.LENGTH_SHORT);
     }
 
     @NonNull
     @Override
     public String getFragmentId() {
-        return String.format("%s:%s-%s",
-                FileDetailFragment.class.getName(),
+        return String.format(Locale.getDefault(), "%s_%d:%s_%d",
+                FileDetailFragment.class.getName(), this.hashCode(),
                 device.getDeviceId(), remoteFile.getPath().hashCode());
     }
 }

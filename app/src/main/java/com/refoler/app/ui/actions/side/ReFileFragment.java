@@ -1,10 +1,7 @@
 package com.refoler.app.ui.actions.side;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,7 +16,6 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -46,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 public class ReFileFragment extends SideFragment {
 
@@ -73,7 +68,7 @@ public class ReFileFragment extends SideFragment {
         public void handleOnBackPressed() {
             if (lastRemoteFile != null) {
                 if (allFileList.getPath().equals(lastRemoteFile.getPath())) {
-                    finishAction();
+                    finishScreen();
                 } else {
                     lastRemoteFile = lastRemoteFile.getParent();
                     loadFileListLayout();
@@ -98,15 +93,14 @@ public class ReFileFragment extends SideFragment {
     @NonNull
     @Override
     public String getFragmentId() {
-        return String.format("%s:%s", ReFileFragment.class.getName(), device.getDeviceId());
+        return String.format(Locale.getDefault(),"%s:%s",
+                ReFileFragment.class.getName(),
+                device.getDeviceId());
     }
 
-    private void finishAction() {
-        if (Applications.isLayoutTablet(mContext)) {
-            SideFragmentHolder.getInstance().popFragment(mContext);
-        } else {
-            mContext.finish();
-        }
+    @Override
+    public OnBackPressedCallback getOnBackDispatcher() {
+        return backPressedCallback;
     }
 
     @Override
@@ -130,30 +124,23 @@ public class ReFileFragment extends SideFragment {
         remoteFileScrollView.getViewTreeObserver().addOnScrollChangedListener(() -> remoteFileRefreshLayout.setEnabled(remoteFileLayout.getVisibility() == View.VISIBLE && remoteFileScrollView.getScrollY() == 0));
 
         MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener((v) -> finishAction());
         toolbar.setTitle(device.getDeviceName());
-
-        if(Applications.isLayoutTablet(mContext)) {
-            Drawable drawable = AppCompatResources.getDrawable(mContext,R.drawable.round_corner_toolbar);
-            Objects.requireNonNull(drawable).setColorFilter(mContext.getColor(R.color.ui_bg),  PorterDuff.Mode.SRC_ATOP);
-            toolbar.setBackground(drawable);
-        }
+        setToolbar(toolbar);
 
         remoteFileRefreshLayout.setOnRefreshListener(() -> {
             remoteFileRefreshLayout.setRefreshing(false);
             if(remoteFileStateProgress.getVisibility() == View.GONE) {
                 loadQueryFromDB(true);
             } else {
-                ToastHelper.show(mContext, "Working in progress!", ToastHelper.LENGTH_SHORT);
+                ToastHelper.show(mContext, getString(R.string.refoler_list_warn_progress), ToastHelper.LENGTH_SHORT);
             }
         });
 
-        mContext.getOnBackPressedDispatcher().addCallback(backPressedCallback);
         loadQueryFromDB(false);
     }
 
     void loadQueryFromDB(boolean renewCache) {
-        showProgress("Retrieving file list from database...");
+        showProgress(getString(R.string.refoler_list_info_progress));
         ReFileCache.getInstance(mContext).fetchList(renewCache, device, new ReFileCache.ReFileFetchListener() {
             @Override
             public void onReceive(@Nullable RemoteFile remoteFile) {
@@ -218,9 +205,8 @@ public class ReFileFragment extends SideFragment {
         lastRemoteFile = latestFile;
     }
 
-    @SuppressLint("SetTextI18n")
     void loadFreshQuery() throws JSONException, IOException {
-        showProgress("Querying file list from target device...\n\nThis task may take some time");
+        showProgress(getString(R.string.refoler_list_info_query));
         ReFileCache.getInstance(mContext).requestDeviceFileList(device, responsePacket -> {
             if(responsePacket.getStatus().equals(PacketConst.STATUS_OK)) {
                 mContext.runOnUiThread(() -> loadQueryFromDB(true));
@@ -231,14 +217,14 @@ public class ReFileFragment extends SideFragment {
     }
 
     void loadFileListLayout() {
-        showProgress("Showing file list...");
+        showProgress(getString(R.string.refoler_list_info_rendering));
         boolean listFolderFirst = prefs.getBoolean("listFolderFirst", true);
         remoteFileLayout.removeViews(0, remoteFileLayout.getChildCount());
 
         if (lastRemoteFile == null) lastRemoteFile = allFileList;
         if (!lastRemoteFile.getPath().equals(allFileList.getPath())) {
             RelativeLayout goParentLayout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
-            new RemoteFileHolder(null, goParentLayout, true, false);
+            new RemoteFileHolder(mContext, null, goParentLayout, true, false);
             goParentLayout.setOnClickListener(v -> {
                 lastRemoteFile = lastRemoteFile.getParent();
                 loadFileListLayout();
@@ -249,7 +235,7 @@ public class ReFileFragment extends SideFragment {
 
         if(lastRemoteFile.isIndexSkipped()) {
             RelativeLayout skippedLayout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
-            new RemoteFileHolder(lastRemoteFile, skippedLayout, false, true);
+            new RemoteFileHolder(mContext, lastRemoteFile, skippedLayout, false, true);
             remoteFileLayout.addView(skippedLayout);
         } else {
             ArrayList<RemoteFileHolder> folders = new ArrayList<>();
@@ -257,7 +243,7 @@ public class ReFileFragment extends SideFragment {
 
             for (RemoteFile file : lastRemoteFile.getList()) {
                 RelativeLayout layout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
-                RemoteFileHolder holder = new RemoteFileHolder(file, layout, false, false);
+                RemoteFileHolder holder = new RemoteFileHolder(mContext, file, layout, false, false);
 
                 layout.setOnClickListener(v -> {
                     if (file.isFile()) {
@@ -320,8 +306,7 @@ public class ReFileFragment extends SideFragment {
         TextView remoteFileTitle;
         TextView remoteFileDescription;
 
-        @SuppressLint("SetTextI18n")
-        public RemoteFileHolder(RemoteFile remoteFile, View view, boolean isGoingParentButton, boolean isSkipped) {
+        public RemoteFileHolder(Context context, RemoteFile remoteFile, View view, boolean isGoingParentButton, boolean isSkipped) {
             this.parentView = view;
             this.remoteFile = remoteFile;
             this.remoteFileIcon = view.findViewById(R.id.remoteFileIcon);
@@ -330,22 +315,22 @@ public class ReFileFragment extends SideFragment {
             this.remoteFileDetail = view.findViewById(R.id.remoteFileDetail);
 
             if(isSkipped) {
-                remoteFileTitle.setText("This folder is not indexed");
-                remoteFileDescription.setText("Indexing was skipped because\nthe folder had too much content");
+                remoteFileTitle.setText(context.getString(R.string.refoler_list_info_not_indexed));
+                remoteFileDescription.setText(context.getString(R.string.refoler_list_info_not_indexed_desc));
                 remoteFileIcon.setImageResource(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_warning_24_regular);
                 remoteFileDetail.setVisibility(View.GONE);
             } else if (isGoingParentButton) {
                 remoteFileTitle.setText("...");
-                remoteFileDescription.setText("Parent folder");
+                remoteFileDescription.setText(context.getString(R.string.refoler_list_item_parent));
                 remoteFileIcon.setImageResource(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_folder_24_filled);
             } else {
-                String description = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault()).format(remoteFile.getLastModified());
+                String description = new SimpleDateFormat(context.getString(R.string.default_date_format), Locale.getDefault()).format(remoteFile.getLastModified());
                 if (remoteFile.isFile()) {
                     description += " " + humanReadableByteCountBin(remoteFile.getSize());
                 }
 
                 if (remoteFile.getPath().equals("/storage/emulated/0")) {
-                    remoteFileTitle.setText("Internal Storage");
+                    remoteFileTitle.setText(context.getString(R.string.refoler_list_item_internal_storage));
                 } else remoteFileTitle.setText(remoteFile.getName());
 
                 remoteFileDescription.setText(description);
