@@ -9,11 +9,13 @@ public class RemoteFileDoc implements Serializable {
     long size;
     long lastModified;
     boolean isFile;
+    int permission;
 
     public RemoteFileDoc(File baseFile) {
         this.lastModified = baseFile.lastModified();
         this.size = baseFile.length();
         this.isFile = true;
+        this.permission = RemoteFolderDoc.getPermissions(baseFile);
     }
 
     public long getSize() {
@@ -34,6 +36,7 @@ public class RemoteFileDoc implements Serializable {
         map.put(ReFileConst.DATA_TYPE_LAST_MODIFIED, lastModified);
         map.put(ReFileConst.DATA_TYPE_IS_FILE, isFile);
         map.put(ReFileConst.DATA_TYPE_SIZE, size);
+        map.put(ReFileConst.DATA_TYPE_PERMISSION, permission);
         return map;
     }
 }

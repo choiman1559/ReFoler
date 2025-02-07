@@ -13,6 +13,7 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
     long lastModified;
     boolean isFile;
     boolean isIndexSkipped;
+    int permission;
     String path;
     RemoteFile parent;
     List<RemoteFile> list;
@@ -38,6 +39,12 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
         list = new ArrayList<>();
         this.parent = parent;
 
+        if(jsonObject.has(ReFileConst.DATA_TYPE_PERMISSION)) {
+            permission = jsonObject.getInt(ReFileConst.DATA_TYPE_PERMISSION);
+        } else {
+            permission = ReFileConst.PERMISSION_UNKNOWN;
+        }
+
         if (jsonObject.getBoolean(ReFileConst.DATA_TYPE_IS_FILE)) {
             isFile = true;
             size = jsonObject.getLong(ReFileConst.DATA_TYPE_SIZE);
@@ -51,6 +58,8 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
             metaKeys.add(ReFileConst.DATA_TYPE_IS_FILE);
             metaKeys.add(ReFileConst.DATA_TYPE_LAST_MODIFIED);
             metaKeys.add(ReFileConst.DATA_TYPE_IS_SKIPPED);
+            metaKeys.add(ReFileConst.DATA_TYPE_SIZE);
+            metaKeys.add(ReFileConst.DATA_TYPE_PERMISSION);
 
             for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
                 String key = it.next();
@@ -95,16 +104,24 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
         return parent;
     }
 
+    public boolean hasPermissionInfo() {
+        return permission != ReFileConst.PERMISSION_UNKNOWN;
+    }
+
+    public boolean canRead() {
+        return (permission & ReFileConst.PERMISSION_READABLE) == ReFileConst.PERMISSION_READABLE;
+    }
+
+    public boolean canWrite() {
+        return (permission & ReFileConst.PERMISSION_WRITABLE) == ReFileConst.PERMISSION_WRITABLE;
+    }
+
+    public boolean canExecute() {
+        return (permission & ReFileConst.PERMISSION_EXECUTABLE) == ReFileConst.PERMISSION_EXECUTABLE;
+    }
+
     @Override
     public int compareTo(RemoteFile o) {
         return o.getName().compareTo(this.getName());
-    }
-
-    public RemoteFile getSerializeOptimized() {
-        RemoteFile tmp = this;
-        list = new ArrayList<>();
-        parent = null;
-
-        return tmp;
     }
 }

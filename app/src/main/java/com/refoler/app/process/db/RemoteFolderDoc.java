@@ -17,6 +17,7 @@ public class RemoteFolderDoc implements Serializable {
         if(baseFolder.canRead()) {
             lists.put(ReFileConst.DATA_TYPE_IS_FILE, false);
             lists.put(ReFileConst.DATA_TYPE_LAST_MODIFIED, baseFolder.lastModified());
+            lists.put(ReFileConst.DATA_TYPE_PERMISSION, getPermissions(baseFolder));
 
             if(BuildConfig.DEBUG) Log.d("Added File", "Added:" + baseFolder);
             File[] fileList = baseFolder.listFiles();
@@ -43,5 +44,19 @@ public class RemoteFolderDoc implements Serializable {
 
     public Map<String, Object> getLists() {
         return lists;
+    }
+
+    public static int getPermissions(File baseFile) {
+        int permission = ReFileConst.PERMISSION_NONE;
+        if (baseFile.canRead()) {
+            permission |= ReFileConst.PERMISSION_READABLE;
+        }
+        if (baseFile.canWrite()) {
+            permission |= ReFileConst.PERMISSION_WRITABLE;
+        }
+        if (baseFile.canExecute()) {
+            permission |= ReFileConst.PERMISSION_EXECUTABLE;
+        }
+        return permission;
     }
 }

@@ -28,6 +28,7 @@ import com.refoler.app.ui.utils.ToastHelper;
 import com.refoler.app.utils.BillingHelper;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -80,6 +81,7 @@ public class FileDetailFragment extends SideFragment {
         PrefsCard fileDateItem = view.findViewById(R.id.fileDateItem);
         PrefsCard fileSizeItem = view.findViewById(R.id.fileSizeItem);
         PrefsCard fileHashItem = view.findViewById(R.id.fileHashItem);
+        PrefsCard filePermissionItem = view.findViewById(R.id.filePermissionItem);
 
         LinearLayout waringLayout = view.findViewById(R.id.waringLayout);
         TextView waringTextView = view.findViewById(R.id.waringText);
@@ -99,6 +101,21 @@ public class FileDetailFragment extends SideFragment {
         filePathItem.setDescription(remoteFile.getPath().replace(remoteFile.getName(), ""));
         fileDateItem.setDescription(new SimpleDateFormat(getString(R.string.default_date_format), Locale.getDefault()).format(remoteFile.getLastModified()));
         fileSizeItem.setDescription(remoteFile.getSize() + " Bytes");
+
+        if(remoteFile.hasPermissionInfo()) {
+            ArrayList<String> permissionInfo = new ArrayList<>();
+            if(remoteFile.canRead()) permissionInfo.add(getString(R.string.refoler_detail_permission_readable));
+            if(remoteFile.canWrite()) permissionInfo.add(getString(R.string.refoler_detail_permission_writable));
+            if(remoteFile.canExecute()) permissionInfo.add(getString(R.string.refoler_detail_permission_executable));
+
+            if(!permissionInfo.isEmpty()) {
+                filePermissionItem.setDescription(String.join(", ", permissionInfo));
+            } else {
+                filePermissionItem.setDescription(getString(R.string.refoler_detail_permission_none));
+            }
+        } else {
+            filePermissionItem.setDescription(getString(R.string.refoler_detail_permission_unknown));
+        }
 
         if (bigFileWarning.isEmpty()) {
             waringLayout.setVisibility(View.GONE);

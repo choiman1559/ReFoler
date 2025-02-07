@@ -47,6 +47,14 @@
             item:cardDescription="Unknown" />
 
         <com.refoler.app.ui.utils.PrefsCard
+            android:id="@+id/filePermissionItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            item:cardType="title|description"
+            item:cardTitle="@string/refoler_detail_data_permission"
+            item:cardDescription="Unknown" />
+
+        <com.refoler.app.ui.utils.PrefsCard
             android:id="@+id/fileHashItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

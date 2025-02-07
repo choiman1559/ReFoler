@@ -2,6 +2,7 @@ package com.refoler.app.ui.actions;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
@@ -32,7 +33,9 @@ import com.refoler.app.backend.consts.RecordConst;
 import com.refoler.app.process.service.SyncFileListService;
 import com.refoler.app.ui.PrefsKeyConst;
 import com.refoler.app.ui.actions.side.ReFileFragment;
+import com.refoler.app.ui.holder.OptionActivityHolder;
 import com.refoler.app.ui.holder.SideFragmentHolder;
+import com.refoler.app.ui.utils.PrefsCard;
 import com.refoler.app.ui.utils.ToastHelper;
 import com.refoler.app.utils.JsonRequest;
 
@@ -123,12 +126,26 @@ public class MainFragment extends Fragment {
             });
         });
 
+        PrefsCard settingsAction = baseView.findViewById(R.id.settingsAction);
+        PrefsCard accountAction = baseView.findViewById(R.id.accountAction);
+        PrefsCard appInfoAction = baseView.findViewById(R.id.appInfoAction);
+
+        settingsAction.setOnClickListener((v) -> openOptionsActivity(OptionActivityHolder.OPTION_TYPE_SETTINGS));
+        accountAction.setOnClickListener((v) -> openOptionsActivity(OptionActivityHolder.OPTION_TYPE_ACCOUNT));
+        appInfoAction.setOnClickListener((v) -> openOptionsActivity(OptionActivityHolder.OPTION_TYPE_INFO));
+
         try {
             loadDeviceList(false);
         } catch (JSONException | IOException e) {
             e.printStackTrace();
             ToastHelper.show(mContext, "Failed to load device list", ToastHelper.LENGTH_SHORT);
         }
+    }
+
+    private void openOptionsActivity(String type) {
+        Intent intent = new Intent(mContext, OptionActivityHolder.class);
+        intent.putExtra(OptionActivityHolder.INTENT_EXTRA_TYPE, type);
+        startActivity(intent);
     }
 
     private void loadDeviceList(boolean enforceFetchFromServer) throws JSONException, IOException {
