@@ -2,4 +2,55 @@
 <androidx.preference.PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <PreferenceCategory
+        android:title="@string/option_settings_category_view">
+        <com.refoler.app.ui.utils.SwitchedPreference
+            android:key="viewFolderFirst"
+            android:title="@string/option_settings_item_folder_first_title"
+            android:summary="@string/option_settings_item_folder_first_desc"
+            android:defaultValue="true" />
+
+        <ListPreference
+            android:key="sortBy"
+            android:title="@string/option_settings_item_sort_by_title"
+            android:entries="@array/array_order_by"
+            android:entryValues="@array/array_order_by"
+            android:defaultValue="@string/option_settings_value_order_by_name_az"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/option_settings_category_index">
+
+        <Preference
+            android:key="indexMaximumSize"
+            android:title="@string/option_settings_item_index_max_title"
+            android:summary="@string/option_settings_item_index_max_desc" />
+
+        <com.refoler.app.ui.utils.SwitchedPreference
+            android:key="indexHiddenFiles"
+            android:title="@string/option_settings_item_index_hidden_title"
+            android:summary="@string/option_settings_item_index_hidden_desc"
+            android:defaultValue="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/option_settings_category_schedule">
+
+        <com.refoler.app.ui.utils.SwitchedPreference
+            android:key="autoBackupEnabled"
+            android:title="@string/option_settings_item_auto_backup_title"
+            android:summary="@string/option_settings_item_auto_backup_desc"
+            android:defaultValue="true"/>
+
+        <Preference
+            android:key="autoBackupInterval"
+            android:title="@string/option_settings_item_backup_interval_title"
+            android:summary="Error: PlaceHolder"/>
+
+        <com.refoler.app.ui.utils.SwitchedPreference
+            android:key="autoBackupCharging"
+            android:title="@string/option_settings_item_backup_charging_title"
+            android:summary="@string/option_settings_item_backup_charging_desc"
+            android:defaultValue="true"/>
+    </PreferenceCategory>
 </androidx.preference.PreferenceScreen>

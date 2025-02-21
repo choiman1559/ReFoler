@@ -2,6 +2,8 @@ package com.refoler.app.backend.consts;
 
 public class PacketConst {
     public final static String API_HOST_ADDRESS = "http://192.168.50.194:18031"; //TODO: Change on release into DNS address
+    public final static String API_HOST_ADDRESS_WS = "192.168.50.194";
+    public final static Integer API_HOST_PORT_WS = 18031;
     public final static String API_ROUTE_SCHEMA = "/api/{version}/service={service_type}";
 
     public final static String STATUS_ERROR = "error";

@@ -1,10 +1,10 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <style name="Theme.MonetCompat" parent="Theme.MaterialComponents.DayNight">
         <item name="android:colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_variant</item>
         <item name="android:colorAccent">@color/accent</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="o_mr1">@bool/light_status_nav</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">@bool/light_status_nav</item>
+        <item name="android:windowLightStatusBar" >@bool/light_status_nav</item>
+        <item name="android:windowLightNavigationBar">@bool/light_status_nav</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/navigation_bar</item>
         <item name="colorControlActivated">@color/accent</item>
@@ -14,8 +14,8 @@
         <item name="android:colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_variant</item>
         <item name="android:colorAccent">@color/accent</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="o_mr1">@bool/light_status_nav</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">@bool/light_status_nav</item>
+        <item name="android:windowLightStatusBar">@bool/light_status_nav</item>
+        <item name="android:windowLightNavigationBar">@bool/light_status_nav</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@color/navigation_bar</item>
         <item name="colorControlActivated">@color/accent</item>
@@ -69,6 +69,7 @@
 
     <style name="Theme.App.Palette.Dialog" parent="Theme.Material3.DayNight.Dialog" >
         <item name="android:windowBackground">@drawable/round_corner</item>
+        <item name="backgroundTint">@color/ui_bg</item>
     </style>
 
     <style name="Theme.App.Material3" parent="Theme.Material3.DayNight.NoActionBar">

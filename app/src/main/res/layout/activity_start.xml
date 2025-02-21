@@ -1,7 +1,225 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.appcompat.widget.LinearLayoutCompat
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/coordinator_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:transitionGroup="true">
 
-</androidx.appcompat.widget.LinearLayoutCompat>
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="210dp"
+        android:background="@android:color/transparent"
+        android:fitsSystemWindows="true"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/collapsing_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fitsSystemWindows="true"
+            app:collapsedTitleTextAppearance="@style/TextAppearance.App.CollapsingToolbar.Collapsed"
+            app:contentScrim="@color/ui_bg_toolbar"
+            app:expandedTitleMarginEnd="24dp"
+            app:expandedTitleMarginStart="24dp"
+            app:expandedTitleTextAppearance="@style/TextAppearance.App.CollapsingToolbar.Expanded"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            app:maxLines="2"
+            app:scrimAnimationDuration="50"
+            app:scrimVisibleHeightTrigger="160dp"
+            app:statusBarScrim="@android:color/transparent"
+            app:titleCollapseMode="fade">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:minHeight="?attr/actionBarSize"
+                app:layout_collapseMode="pin"
+                app:navigationIconTint="@color/ui_fg"
+                app:title="@string/refoler_start_welcome_title" />
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginVertical="8dp"
+                android:fontFamily="@font/sans"
+                android:text="@string/refoler_start_welcome_desc"
+                android:textSize="20sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="15dp"
+                android:text="@string/refoler_start_account_title"
+                android:textColor="@color/ui_accent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/Permit_Account"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/round_corner"
+                android:gravity="center"
+                android:text="@string/refoler_start_account_button"
+                android:textColor="@color/ui_bg"
+                app:icon="@drawable/ic_baseline_account_circle_24"
+                app:iconTint="@color/ui_bg" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginVertical="15dp"
+                android:text="@string/refoler_start_notification_title"
+                android:textColor="@color/ui_accent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="15dp"
+                android:fontFamily="@font/sans"
+                android:text="@string/refoler_start_notification_desc"
+                android:textColor="@color/ui_fg_secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/Permit_Notification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="24dp"
+                android:background="@drawable/round_corner"
+                android:gravity="center"
+                android:text="@string/refoler_start_notification_button"
+                android:textColor="@color/ui_bg"
+                app:icon="@drawable/ic_fluent_alert_24_regular"
+                app:iconTint="@color/ui_bg" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginVertical="15dp"
+                android:text="@string/refoler_start_optimization_title"
+                android:textColor="@color/ui_accent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="15dp"
+                android:fontFamily="@font/sans"
+                android:text="@string/refoler_start_optimization_desc"
+                android:textColor="@color/ui_fg_secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/Permit_Battery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/round_corner"
+                android:gravity="center"
+                android:text="@string/refoler_start_battery_button"
+                android:textColor="@color/ui_bg"
+                app:icon="@drawable/ic_fluent_battery_checkmark_24_regular"
+                app:iconTint="@color/ui_bg" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/Permit_File"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/round_corner"
+                android:gravity="center"
+                android:text="@string/refoler_start_file_button"
+                android:textColor="@color/ui_bg"
+                app:icon="@drawable/ic_fluent_folder_24_regular"
+                app:iconTint="@color/ui_bg" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginVertical="15dp"
+                android:text="@string/refoler_start_legal_title"
+                android:textColor="@color/ui_accent" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="15dp"
+                android:fontFamily="@font/sans"
+                android:text="@string/refoler_start_legal_desc"
+                android:textColor="@color/ui_fg_secondary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/Permit_Privacy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/round_corner"
+                android:gravity="center"
+                android:text="@string/refoler_start_legal_privacy_button"
+                android:textColor="@color/ui_bg"
+                app:icon="@drawable/ic_fluent_inprivate_account_24_regular"
+                app:iconTint="@color/ui_bg" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/Permit_Collect_Data"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/round_corner"
+                android:gravity="center"
+                android:text="@string/refoler_start_legal_data_button"
+                android:textColor="@color/ui_bg"
+                app:icon="@drawable/ic_fluent_database_search_24_regular"
+                app:iconTint="@color/ui_bg" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/Start_App"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:enabled="false"
+        android:text="@string/refoler_start_floating_button"
+        android:textColor="@color/ui_bg"
+        app:icon="@drawable/ic_fluent_play_24_regular"
+        app:iconTint="@color/ui_bg"
+        app:layout_dodgeInsetEdges="bottom" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

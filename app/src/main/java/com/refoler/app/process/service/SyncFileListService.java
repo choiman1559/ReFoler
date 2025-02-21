@@ -44,7 +44,7 @@ public class SyncFileListService extends Service {
         mNotifyManager.createNotificationChannel(channel);
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, PrefsKeyConst.NOTIFICATION_SYNC_TASK_CHANNEL)
-                .setSmallIcon(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_arrow_download_24_regular)
+                .setSmallIcon(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_folder_sync_24_regular)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOnlyAlertOnce(true)
                 .setGroupSummary(false)
@@ -53,7 +53,7 @@ public class SyncFileListService extends Service {
                 .setContentTitle(getString(R.string.sync_notification_title))
                 .setContentText(getString(R.string.sync_notification_content));
 
-        startForeground(SyncFileListProcess.getInstance().hashCode(), mBuilder.build());
+        startForeground(PrefsKeyConst.NOTIFICATION_KEY_SYNC_PROCESS.hashCode(), mBuilder.build());
     }
 
     @Override
@@ -76,6 +76,6 @@ public class SyncFileListService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mNotifyManager.cancel(SyncFileListProcess.getInstance().hashCode());
+        mNotifyManager.cancel(PrefsKeyConst.NOTIFICATION_KEY_SYNC_PROCESS);
     }
 }

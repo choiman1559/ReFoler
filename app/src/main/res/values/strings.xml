@@ -1,25 +1,52 @@
 <resources>
-    <string name="app_name">ReFoler</string>
+    <string translatable="false" name="app_name">ReFoler</string>
     <string name="sync_notification_title">Synchronize file list</string>
     <string name="sync_notification_content">Indexing &amp; Uploading device file list…</string>
     <string name="foreground_description_fcm">A service used to interact with other devices over the FCM network</string>
+
     <string name="default_string_okay">Okay</string>
     <string name="default_string_cancel">Cancel</string>
+    <string name="default_string_aggree">Agree</string>
+    <string name="default_string_apply">Apply</string>
+    <string name="default_string_value">Value</string>
+    <string name="default_string_input_value">Input Value</string>
+    <string name="default_string_reset_default">Reset Default</string>
+    <string name="default_string_input_empty">Please Input Value</string>
+    <string name="default_string_input_out_of_range">Value must be inside 0~65535</string>
 
     <string name="search_nav_hint">Search Files…</string>
-    <string name="nav_menu_settings">Settings</string>
-    <string name="nav_menu_account">Account</string>
-    <string name="nav_menu_info">Application Infos</string>
     <string name="button_refolerai">ReFoler AI</string>
     <string name="available_devices">Available devices</string>
     <string name="nav_title_settings">Settings</string>
     <string name="nav_desc_settings">General Preferences</string>
-    <string name="nav_title_account">Accounts</string>
-    <string name="nav_desc_account">Service toggle, Login</string>
+    <string name="nav_title_account">Account &amp; Security</string>
+    <string name="nav_desc_account">Log-in/out, Passwords</string>
     <string name="nav_title_info">App information</string>
     <string name="nav_desc_info">Status, Legal information</string>
     <string name="side_fragment_default_title">Find and manage files</string>
     <string name="side_fragment_default_desc">Select your device on the left and see details here</string>
+    <string name="main_fragment_default_title">No registered devices</string>
+    <string name="main_fragment_default_desc">After logging in on another device, press the refresh button to display the devices.</string>
+
+    <string name="refoler_start_welcome_title">Welcome</string>
+    <string name="refoler_start_welcome_desc">Before we start,\nWe need to grant some permissions.</string>
+    <string name="refoler_start_account_title">Account Login</string>
+    <string name="refoler_start_account_button">Log in to Google</string>
+    <string name="refoler_start_login_failed">Failed to login Google</string>
+    <string name="refoler_start_notification_title">Notification permissions</string>
+    <string name="refoler_start_notification_desc">This permission is required for ReFoler to allow post notifications on device.</string>
+    <string name="refoler_start_notification_button">Notification Permission</string>
+    <string name="refoler_start_optimization_title">Application Optimization permissions</string>
+    <string name="refoler_start_optimization_desc">This permission is required to allow to run in the background.</string>
+    <string name="refoler_start_battery_button">battery optimizations</string>
+    <string name="refoler_start_file_button">File access permission</string>
+    <string name="refoler_start_legal_title">Legal &amp; Regulatory </string>
+    <string name="refoler_start_legal_desc">EULA that Norix Team and Google requires from its users. You can review this license at any time in the \'App Information\' menu.</string>
+    <string name="refoler_start_legal_privacy_button">Privacy Policy</string>
+    <string name="refoler_start_legal_data_button">Data Collections</string>
+    <string name="refoler_start_floating_button">Start App</string>
+    <string name="refoler_start_dialog_privacy_desc">You need to accept &lt;a href=\"https://github.com/choiman1559/ReFoler/blob/master/PrivacyPolicy\"&gt;Privacy Policy&lt;/a &gt; to use this app.</string>
+    <string name="refoler_start_dialog_data_desc">Noti Sender reads the user\'s File information for synchronization between devices, even when the app is closed or not in use.</string>
 
     <string name="refoler_detail_size_limit_unsub">The file is too large to download!\\nThe maximum download file size is 100MB,\\n increasing up to 2GB with subscription.</string>
     <string name="refoler_detail_size_limit_sub">The file is too large to download!\\nMaximum download file size is 2GB.</string>
@@ -43,6 +70,7 @@
     <string name="refoler_detail_permission_unknown">Unknown</string>
 
     <string name="refoler_list_warn_progress">Working in progress!</string>
+    <string name="refoler_list_warn_not_found">Specified path not found: %s</string>
     <string name="refoler_list_info_progress">Retrieving file list from database…</string>
     <string name="refoler_list_info_query">Querying file list from target device…\n\nThis task may take some time</string>
     <string name="refoler_list_info_rendering">Showing file list…</string>
@@ -54,4 +82,64 @@
     <string name="options_toolbar_title_settings">General Settings</string>
     <string name="options_toolbar_title_account">Account Options</string>
     <string name="options_toolbar_title_info">App Information</string>
+
+    <string name="options_info_title">About ReFoler</string>
+    <string name="options_info_title_version">App Version</string>
+    <string name="options_info_title_github">Github repository</string>
+    <string name="options_info_title_opensource">Open source licenses</string>
+    <string name="options_info_title_privacy_policy">Privacy Policy</string>
+    <string name="options_info_title_data_collections">Data collections agreement</string>
+    <string name="options_info_desc_legal">Legal &amp; regulatory</string>
+    <string name="options_info_desc_github">Made by Norix Team</string>
+    <string name="options_info_desc_opensource">This application is free-software under the GNU GPL-3.0 license.</string>
+
+    <string name="option_settings_category_view">Views</string>
+    <string name="option_settings_category_index">Indexing</string>
+    <string name="option_settings_category_schedule">Scheduled Query</string>
+
+    <string name="option_settings_item_folder_first_title">List folder first</string>
+    <string name="option_settings_item_folder_first_desc">Folders are always listed first, followed by the remaining files</string>
+    <string name="option_settings_item_sort_by_title">Selects list sort order</string>
+    <string name="option_settings_item_index_hidden_title">Index hidden files</string>
+    <string name="option_settings_item_index_hidden_desc">Indexes hidden files and folders whose names start with "." (dot)</string>
+    <string name="option_settings_item_index_max_title">Set the maximum size of folder content</string>
+    <string name="option_settings_item_index_max_desc">If the number of content in a folder exceeds a certain number, indexing of that folder is skipped</string>
+    <string name="option_settings_item_auto_backup_title">Enable automatic backups</string>
+    <string name="option_settings_item_auto_backup_desc">The list of files on your device will be backed up at specified intervals</string>
+    <string name="option_settings_item_backup_interval_title">Auto backup interval</string>
+    <string name="option_settings_item_backup_interval_desc_format">%d Hours</string>
+    <string name="option_settings_item_backup_charging_title">Auto backup when charging</string>
+    <string name="option_settings_item_backup_charging_desc">Automatically backup files on your device when the device is charging</string>
+
+    <string name="option_settings_value_order_by_new_date">Newest date first</string>
+    <string name="option_settings_value_order_by_old_date">Oldest date first</string>
+    <string name="option_settings_value_order_by_large_size">Largest first</string>
+    <string name="option_settings_value_order_by_small_size">Smallest first</string>
+    <string name="option_settings_value_order_by_name_az">Name A to Z</string>
+    <string name="option_settings_value_order_by_name_za">Name Z to A</string>
+
+    <string name="option_account_item_account_title">Log out to Google</string>
+    <string name="option_account_item_account_desc">Logined as %s</string>
+    <string name="option_account_item_register_title">Register this device with the server</string>
+    <string name="option_account_item_register_desc">If this device is not visible to other devices,\ntap this menu to register manually.</string>
+    <string name="option_account_item_register_info">Device Registered!</string>
+    <string name="option_account_item_register_fail">Device Registration Failed!</string>
+    <string name="option_account_item_account_dialog_title">Log out</string>
+    <string name="option_account_item_account_dialog_desc">Are you sure to Log out?\nAll data associated with this device will be deleted from server, and you will need to sign in again to use this app.</string>
+    <string name="option_account_item_password_title">Use Password</string>
+    <string name="option_account_item_password_desc">Enables End-To-End Encryption in P2P communications</string>
+    <string name="option_account_item_password_value">Input/Edit Password</string>
+    <string name="option_account_item_password_info">NOTE: Encryption does not apply to the file list.</string>
+
+    <string name="search_device_this_device">(Current device)</string>
+    <string name="search_error_title">Error occurred while searching!</string>
+    <string name="search_no_result_title">No Search Result</string>
+    <string name="search_no_result_desc">Try another keyword, or use ReFoler AI for advance search.</string>
+
+    <string name="llm_chat_title">ReFoler AI</string>
+    <string name="llm_chat_sender_user">User</string>
+    <string name="llm_chat_sender_assistance">ReFoler AI</string>
+    <string name="llm_chat_info_awaiting">Awaiting response…</string>
+    <string name="llm_chat_info_error_occurred">Error occurred!</string>
+    <string name="llm_chat_info_error_device_not_found">Error: Target Device not found!</string>
 </resources>

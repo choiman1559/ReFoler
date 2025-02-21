@@ -3,6 +3,7 @@ package com.refoler.app.backend;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.refoler.Refoler;
+import com.refoler.app.backend.consts.PacketConst;
 
 import java.io.IOException;
 import io.ktor.http.HttpStatusCode;
@@ -25,6 +26,14 @@ public class ResponseWrapper {
 
     public Refoler.ResponsePacket getRefolerPacket() {
         return refolerPacket;
+    }
+
+    public boolean gotOk() {
+        if(getRefolerPacket() != null) {
+            return getRefolerPacket().getStatus().equals(PacketConst.STATUS_OK);
+        } else {
+            return getStatusCode().equals(HttpStatusCode.Companion.getOK());
+        }
     }
 
     public String getSerializedData() throws InvalidProtocolBufferException {

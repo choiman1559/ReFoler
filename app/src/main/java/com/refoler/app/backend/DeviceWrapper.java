@@ -13,11 +13,19 @@ import android.os.Build;
 import com.google.protobuf.util.JsonFormat;
 import com.refoler.Refoler;
 import com.refoler.app.Applications;
+import com.refoler.app.backend.consts.RecordConst;
 import com.refoler.app.ui.PrefsKeyConst;
+import com.refoler.app.utils.JsonRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.Nullable;
+
 
 public class DeviceWrapper {
 
@@ -52,20 +60,20 @@ public class DeviceWrapper {
         return builder.build();
     }
 
-    public static String getDeviceName() {
+    public static String getSelfDeviceName() {
         return String.format("%s %s", Build.MANUFACTURER, Build.MODEL);
     }
 
     @SuppressLint("HardwareIds")
-    public static String getUniqueID(Context context) {
+    public static String getSelfUniqueID(Context context) {
         SharedPreferences prefs = Applications.getPrefs(context);
         return prefs.getString(PrefsKeyConst.PREFS_KEY_DEVICE_ID, "");
     }
 
     public static Refoler.Device getSelfDeviceInfo(Context context) {
         Refoler.Device.Builder device = Refoler.Device.newBuilder();
-        device.setDeviceName(getDeviceName());
-        device.setDeviceId(getUniqueID(context));
+        device.setDeviceName(getSelfDeviceName());
+        device.setDeviceId(getSelfUniqueID(context));
         device.setDeviceFormfactor(getThisDeviceForm(context));
         device.setDeviceType(Refoler.DeviceType.DEVICE_TYPE_ANDROID);
         return device.build();
@@ -153,5 +161,26 @@ public class DeviceWrapper {
             default ->
                     com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_developer_board_24_regular;
         };
+    }
+
+    public static List<Refoler.Device> getAllRegisteredDeviceList(Context context) {
+        ArrayList<Refoler.Device> devices = new ArrayList<>();
+        try {
+            JSONArray jsonArray = new JSONArray(Applications.getPrefs(context, Applications.PREFS_DEVICE_LIST_CACHE_SUFFIX)
+                    .getString(PrefsKeyConst.PREFS_KEY_DEVICE_LIST_CACHE, ""));
+            for (int i = 0; i < jsonArray.length(); i++) {
+                devices.add(DeviceWrapper.parseFrom(jsonArray.getString(i)));
+            }
+        } catch (JSONException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        return devices;
+    }
+
+    public static void registerSelf(Context mContext, JsonRequest.OnReceivedCompleteListener listener) {
+        Refoler.RequestPacket.Builder requestBuilder = Refoler.RequestPacket.newBuilder();
+        requestBuilder.setActionName(RecordConst.SERVICE_ACTION_TYPE_POST);
+        requestBuilder.addDevice(DeviceWrapper.getSelfDeviceInfo(mContext));
+        JsonRequest.postRequestPacket(mContext, RecordConst.SERVICE_TYPE_DEVICE_REGISTRATION, requestBuilder, listener);
     }
 }

@@ -6,7 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginVertical="24dp"
-    android:layout_marginEnd="24dp"
     android:backgroundTint="@color/ui_bg_surface"
     android:orientation="vertical"
     app:layout_constraintLeft_toLeftOf="parent"
@@ -43,21 +42,21 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.refoler.app.ui.utils.PrefsCard
-        android:id="@+id/settingsAction"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        item:cardDescription="@string/nav_desc_settings"
-        item:cardIconDrawable="@drawable/ic_fluent_settings_24_regular"
-        item:cardTitle="@string/nav_title_settings"
-        item:cardType="title|description|icon" />
-
-    <com.refoler.app.ui.utils.PrefsCard
         android:id="@+id/accountAction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         item:cardDescription="@string/nav_desc_account"
         item:cardIconDrawable="@drawable/ic_fluent_person_24_regular"
         item:cardTitle="@string/nav_title_account"
+        item:cardType="title|description|icon" />
+
+    <com.refoler.app.ui.utils.PrefsCard
+        android:id="@+id/settingsAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        item:cardDescription="@string/nav_desc_settings"
+        item:cardIconDrawable="@drawable/ic_fluent_settings_24_regular"
+        item:cardTitle="@string/nav_title_settings"
         item:cardType="title|description|icon" />
 
     <com.refoler.app.ui.utils.PrefsCard

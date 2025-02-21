@@ -27,9 +27,13 @@ class JsonRequest {
         private fun buildApiUrl(serviceType: String): String {
             return "%s%s".format(
                 PacketConst.API_HOST_ADDRESS,
-                PacketConst.API_ROUTE_SCHEMA.replace("{version}", "v1")
-                    .replace("{service_type}", serviceType)
+                buildPathUri(serviceType)
             )
+        }
+
+        fun buildPathUri(serviceType: String): String {
+            return PacketConst.API_ROUTE_SCHEMA.replace("{version}", "v1")
+                .replace("{service_type}", serviceType)
         }
 
         @JvmStatic

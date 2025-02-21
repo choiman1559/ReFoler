@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="array_order_by">
+        <item>@string/option_settings_value_order_by_new_date</item>
+        <item>@string/option_settings_value_order_by_old_date</item>
+        <item>@string/option_settings_value_order_by_large_size</item>
+        <item>@string/option_settings_value_order_by_small_size</item>
+        <item>@string/option_settings_value_order_by_name_az</item>
+        <item>@string/option_settings_value_order_by_name_za</item>
+    </string-array>
+</resources>

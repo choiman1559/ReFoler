@@ -42,8 +42,8 @@ public class IOUtils {
     }
 
     public static boolean deleteRecursively(File target) throws SecurityException {
-        if(!target.isFile()) {
-            for(File innerFile : Objects.requireNonNullElse(target.listFiles(), new File[]{})) {
+        if (!target.isFile()) {
+            for (File innerFile : Objects.requireNonNullElse(target.listFiles(), new File[]{})) {
                 deleteRecursively(innerFile);
             }
         }

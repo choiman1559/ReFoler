@@ -9,7 +9,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -30,11 +29,16 @@ import com.refoler.app.Applications;
 import com.refoler.app.R;
 import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.consts.RecordConst;
+import com.refoler.app.process.SyncFileListProcess;
 import com.refoler.app.process.service.SyncFileListService;
 import com.refoler.app.ui.PrefsKeyConst;
+import com.refoler.app.ui.actions.side.ChatFragment;
+import com.refoler.app.ui.actions.side.DeviceDetailFragment;
 import com.refoler.app.ui.actions.side.ReFileFragment;
+import com.refoler.app.ui.holder.InfoViewHolder;
 import com.refoler.app.ui.holder.OptionActivityHolder;
 import com.refoler.app.ui.holder.SideFragmentHolder;
+import com.refoler.app.ui.options.InfoActivity;
 import com.refoler.app.ui.utils.PrefsCard;
 import com.refoler.app.ui.utils.ToastHelper;
 import com.refoler.app.utils.JsonRequest;
@@ -47,8 +51,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import io.ktor.http.HttpStatusCode;
-
 public class MainFragment extends Fragment {
 
     Activity mContext;
@@ -56,6 +58,7 @@ public class MainFragment extends Fragment {
     SharedPreferences cachePrefs;
 
     LinearLayout deviceListLayout;
+    InfoViewHolder emptyLayout;
     ProgressBar reloadProgressBar;
     ArrayList<Refoler.Device> devices;
     HashMap<Refoler.Device, DeviceItemHolder> deviceItemMap;
@@ -90,6 +93,7 @@ public class MainFragment extends Fragment {
 
         deviceListLayout = baseView.findViewById(R.id.deviceListLayout);
         reloadProgressBar = baseView.findViewById(R.id.reloadProgressBar);
+        emptyLayout = new InfoViewHolder(mContext, baseView.findViewById(R.id.deviceEmptyInfo));
 
         ExtendedFloatingActionButton reloadDeviceListButton = baseView.findViewById(R.id.reloadDeviceListButton);
         ExtendedFloatingActionButton refolerAiActionButton = baseView.findViewById(R.id.refolerAiActionButton);
@@ -105,26 +109,13 @@ public class MainFragment extends Fragment {
             }
         });
 
-        refolerAiActionButton.setOnClickListener((v) -> {
+        refolerAiActionButton.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(mContext, new ChatFragment()));
+        View.OnClickListener searchListener = (v) -> mContext.startActivity(new Intent(mContext, SearchActivity.class));
 
-        });
-
-        Button uploadFileNow = baseView.findViewById(R.id.uploadFileNow);
-        Button registerDeviceNow = baseView.findViewById(R.id.registerDeviceNow);
-
-        uploadFileNow.setOnClickListener((v) -> {
-            SyncFileListService.startService(mContext);
-        });
-
-        registerDeviceNow.setOnClickListener((v) -> {
-            Refoler.RequestPacket.Builder requestBuilder = Refoler.RequestPacket.newBuilder();
-            requestBuilder.setActionName(RecordConst.SERVICE_ACTION_TYPE_POST);
-            requestBuilder.addDevice(DeviceWrapper.getSelfDeviceInfo(mContext));
-            JsonRequest.postRequestPacket(mContext, RecordConst.SERVICE_TYPE_DEVICE_REGISTRATION, requestBuilder, (response) -> {
-                Log.d("BackendImplementation", "Device Registered!");
-                FirebaseMessaging.getInstance().subscribeToTopic(prefs.getString(PrefsKeyConst.PREFS_KEY_UID, ""));
-            });
-        });
+        View searchHint = baseView.findViewById(R.id.searchHint);
+        View searchButton = baseView.findViewById(R.id.searchButton);
+        searchHint.setOnClickListener(searchListener);
+        searchButton.setOnClickListener(searchListener);
 
         PrefsCard settingsAction = baseView.findViewById(R.id.settingsAction);
         PrefsCard accountAction = baseView.findViewById(R.id.accountAction);
@@ -132,7 +123,11 @@ public class MainFragment extends Fragment {
 
         settingsAction.setOnClickListener((v) -> openOptionsActivity(OptionActivityHolder.OPTION_TYPE_SETTINGS));
         accountAction.setOnClickListener((v) -> openOptionsActivity(OptionActivityHolder.OPTION_TYPE_ACCOUNT));
-        appInfoAction.setOnClickListener((v) -> openOptionsActivity(OptionActivityHolder.OPTION_TYPE_INFO));
+        appInfoAction.setOnClickListener((v) -> startActivity(new Intent(mContext, InfoActivity.class)));
+
+        if(!SyncFileListProcess.getInstance().getCachedResult(mContext).exists()) {
+            SyncFileListService.startService(mContext);
+        }
 
         try {
             loadDeviceList(false);
@@ -165,7 +160,7 @@ public class MainFragment extends Fragment {
         requestBuilder.setActionName(RecordConst.SERVICE_ACTION_TYPE_GET);
         JsonRequest.postRequestPacket(mContext, RecordConst.SERVICE_TYPE_DEVICE_REGISTRATION, requestBuilder, (response) -> {
             try {
-                if (response.getStatusCode().equals(HttpStatusCode.Companion.getOK())) {
+                if (response.gotOk()) {
                     List<String> responseDevices = response.getRefolerPacket().getExtraDataList();
                     JSONArray jsonArray = new JSONArray();
 
@@ -175,6 +170,10 @@ public class MainFragment extends Fragment {
                     }
 
                     cachePrefs.edit().putString(PrefsKeyConst.PREFS_KEY_DEVICE_LIST_CACHE, jsonArray.toString()).apply();
+                    renderDeviceList();
+                } else if(response.getRefolerPacket().getErrorCause().equals(RecordConst.ERROR_DATA_DEVICE_INFO_NOT_AVAILABLE)) {
+                    devices.clear();
+                    cachePrefs.edit().remove(PrefsKeyConst.PREFS_KEY_DEVICE_LIST_CACHE).apply();
                     renderDeviceList();
                 } else {
                     ToastHelper.show(mContext, "Failed to load device list", ToastHelper.LENGTH_SHORT);
@@ -192,25 +191,44 @@ public class MainFragment extends Fragment {
             deviceItemMap = new HashMap<>();
 
             if (devices.isEmpty()) {
-                //TODO: Show empty info views
-            } else for (Refoler.Device device : devices) {
-                if (DeviceWrapper.isSelfDevice(mContext, device)) {
-                    continue;
+                emptyLayout.setVisibility(View.VISIBLE);
+                DeviceWrapper.registerSelf(mContext, (response) -> {
+                    Log.d("DeviceRegistration", "Self device info has been registered!");
+                    FirebaseMessaging.getInstance().subscribeToTopic(prefs.getString(PrefsKeyConst.PREFS_KEY_UID, ""));
+                });
+            } else {
+                boolean isSelfNotRegistered = true;
+                boolean isOnlySelfDevice = true;
+
+                for (Refoler.Device device : devices) {
+                    if (DeviceWrapper.isSelfDevice(mContext, device)) {
+                        isSelfNotRegistered = false;
+                        continue;
+                    }
+
+                    isOnlySelfDevice = false;
+                    DeviceItemHolder deviceItemHolder = new DeviceItemHolder(mContext, device);
+                    deviceItemMap.put(device, deviceItemHolder);
+                    deviceListLayout.addView(deviceItemHolder.createView());
+                    deviceListLayout.addView(getMarginView(mContext, 24));
                 }
 
-                DeviceItemHolder deviceItemHolder = new DeviceItemHolder(mContext, device);
-                deviceItemMap.put(device, deviceItemHolder);
-                deviceListLayout.addView(deviceItemHolder.createView());
-                deviceListLayout.addView(getMarginView());
+                emptyLayout.setVisibility(isOnlySelfDevice ? View.VISIBLE :View.GONE);
+                if(isSelfNotRegistered) {
+                    DeviceWrapper.registerSelf(mContext, (response) -> {
+                        Log.d("DeviceRegistration", "Self device info has been registered!");
+                        FirebaseMessaging.getInstance().subscribeToTopic(prefs.getString(PrefsKeyConst.PREFS_KEY_UID, ""));
+                    });
+                }
             }
             reloadProgressBar.setVisibility(View.GONE);
         });
     }
 
-    private Space getMarginView() {
-        Space space = new Space(mContext);
+    public static Space getMarginView(Context context, int height) {
+        Space space = new Space(context);
         LinearLayout.LayoutParams spaceLayoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 24);
+                LinearLayout.LayoutParams.MATCH_PARENT, height);
         space.setLayoutParams(spaceLayoutParams);
         return space;
     }
@@ -239,12 +257,8 @@ public class MainFragment extends Fragment {
         public RelativeLayout createView() {
             this.deviceIcon.setImageResource(DeviceWrapper.getDeviceFormBitmap(device.getDeviceFormfactor()));
             this.deviceName.setText(device.getDeviceName());
-            this.itemHolderView.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(context, new ReFileFragment(device)));
-
-            this.deviceDetail.setOnClickListener((v) -> {
-                // TODO: Add device detail screen
-            });
-
+            this.itemHolderView.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(context, new ReFileFragment(device, null)));
+            this.deviceDetail.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(context, new DeviceDetailFragment().setDevice(device)));
             return itemHolderView;
         }
     }

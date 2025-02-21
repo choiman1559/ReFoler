@@ -15,6 +15,7 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
@@ -38,8 +39,12 @@ public class FileDetailFragment extends SideFragment {
     RemoteFile remoteFile;
     Refoler.Device device;
 
-    final int fileIconResId;
+    int fileIconResId;
     boolean isHashReceived = false;
+
+    public FileDetailFragment() {
+        // Default constructor for fragment manager
+    }
 
     public FileDetailFragment(Refoler.Device device, RemoteFile remoteFile, int fileIconResId) {
         this.remoteFile = remoteFile;
@@ -71,10 +76,25 @@ public class FileDetailFragment extends SideFragment {
     }
 
     @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable("device", device);
+        outState.putSerializable("remoteFile", remoteFile.getSerializeOptimized());
+        outState.putInt("fileIconResId", fileIconResId);
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
         setToolbar(toolbar);
+        view.setBackgroundColor(ContextCompat.getColor(mContext, R.color.ui_bg));
+
+        if(savedInstanceState != null) {
+            device = (Refoler.Device) savedInstanceState.getSerializable("device");
+            remoteFile = (RemoteFile) savedInstanceState.getSerializable("remoteFile");
+            fileIconResId = savedInstanceState.getInt("fileIconResId");
+        }
 
         PrefsCard fileNameItem = view.findViewById(R.id.fileNameItem);
         PrefsCard filePathItem = view.findViewById(R.id.filePathItem);

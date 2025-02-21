@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 
 import com.refoler.Refoler;
 import com.refoler.app.Applications;
@@ -14,12 +13,14 @@ import com.refoler.app.backend.ResponseWrapper;
 import com.refoler.app.process.db.ReFileConst;
 import com.refoler.app.process.db.RemoteFolderDoc;
 import com.refoler.app.ui.PrefsKeyConst;
+import com.refoler.app.utils.IOUtils;
 import com.refoler.app.utils.JsonRequest;
 
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -53,6 +54,15 @@ public class SyncFileListProcess {
         this.listProcessListeners.remove(listProcessListener);
     }
 
+    public boolean isNeedUpdate(Context context) {
+        File cachedResult = getCachedResult(context);
+        long backUpInterval = Applications.getPrefs(context).getInt(PrefsKeyConst.PREFS_KEY_AUTO_BACKUP_INTERVAL, 8);
+
+        if (!cachedResult.exists()) {
+            return true;
+        } else return cachedResult.lastModified() < System.currentTimeMillis() - 1000 * 60 * 60 * backUpInterval;
+    }
+
     public boolean isProcessRunning() {
         return workerThread != null && workerThread.isAlive();
     }
@@ -61,6 +71,15 @@ public class SyncFileListProcess {
         if (isProcessRunning()) {
             workerThread.interrupt();
         }
+    }
+
+    /**
+     * @noinspection ResultOfMethodCallIgnored
+     */
+    public File getCachedResult(Context context) {
+        File fileListDataDir = new File(context.getCacheDir(), PrefsKeyConst.DIR_FILE_LIST_CACHE);
+        fileListDataDir.mkdirs();
+        return new File(fileListDataDir, DeviceWrapper.getSelfDeviceInfo(context).getDeviceId() + ".json");
     }
 
     public void startSyncProcess(Context context) {
@@ -75,7 +94,7 @@ public class SyncFileListProcess {
                         prefs.getInt(PrefsKeyConst.PREFS_KEY_INDEX_MAX_SIZE, 150),
                         prefs.getBoolean(PrefsKeyConst.PREFS_KEY_INDEX_HIDDEN_FILES, false));
             } catch (Throwable throwable) {
-                if(!listProcessListeners.isEmpty()) {
+                if (!listProcessListeners.isEmpty()) {
                     for (OnSyncFileListProcessListener listener : listProcessListeners) {
                         listener.onSyncFileListProcessFailed(throwable);
                     }
@@ -91,7 +110,7 @@ public class SyncFileListProcess {
         File[] allExternalFilesDirs;
 
         if (basePath == null) {
-            allExternalFilesDirs = ContextCompat.getExternalFilesDirs(context, null);
+            allExternalFilesDirs = context.getExternalFilesDirs(null);
         } else {
             allExternalFilesDirs = new File(basePath).listFiles();
         }
@@ -116,6 +135,17 @@ public class SyncFileListProcess {
 
         drives.put(ReFileConst.DATA_TYPE_LAST_MODIFIED, Calendar.getInstance().getTimeInMillis());
         final String finalFileListString = new JSONObject(drives).toString();
+
+        try {
+            File cachedResult = getCachedResult(context);
+            if (!cachedResult.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                cachedResult.createNewFile();
+            }
+            IOUtils.writeTo(cachedResult, finalFileListString, true);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         Refoler.RequestPacket.Builder requestPacket = Refoler.RequestPacket.newBuilder();
         requestPacket.setActionName(RecordConst.SERVICE_ACTION_TYPE_POST);

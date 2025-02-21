@@ -1,4 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<androidx.preference.PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <PreferenceCategory
+        android:title="Accounts">
+
+        <Preference
+            android:key="UID"
+            android:title="@string/option_account_item_account_title"
+            android:summary="@string/option_account_item_account_desc"
+            android:icon="@drawable/ic_fluent_person_accounts_24_regular"/>
+
+        <Preference
+            android:key="registerManually"
+            android:title="@string/option_account_item_register_title"
+            android:summary="@string/option_account_item_register_desc"
+            android:icon="@drawable/ic_fluent_phone_update_checkmark_24_regular"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Security">
+
+        <com.refoler.app.ui.utils.SwitchedPreference
+            android:key="passwordEnabled"
+            android:title="@string/option_account_item_password_title"
+            android:summary="@string/option_account_item_password_desc"
+            android:defaultValue="false"
+            android:icon="@drawable/ic_fluent_password_24_regular"/>
+
+        <Preference
+            android:key="passwordValue"
+            android:title="@string/option_account_item_password_value" />
+
+        <Preference
+            android:key="passwordWarning"
+            android:icon="@drawable/ic_info_outline_black_24dp"
+            android:summary="@string/option_account_item_password_info"/>
+    </PreferenceCategory>
 </androidx.preference.PreferenceScreen>

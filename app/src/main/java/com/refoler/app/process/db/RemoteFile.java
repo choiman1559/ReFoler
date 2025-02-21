@@ -1,5 +1,7 @@
 package com.refoler.app.process.db;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,17 +31,17 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
             if (key.equals(ReFileConst.DATA_TYPE_LAST_MODIFIED)) {
                 lastModified = (Long) obj;
             } else {
-                list.add(new RemoteFile(this, (JSONObject) obj, key));
+                list.add(new RemoteFile(this, (JSONObject) obj, key, false));
             }
         }
     }
 
-    protected RemoteFile(RemoteFile parent, JSONObject jsonObject, String basePath) throws JSONException {
+    protected RemoteFile(@Nullable RemoteFile parent, JSONObject jsonObject, String basePath, boolean singleObj) throws JSONException {
         path = basePath;
         list = new ArrayList<>();
         this.parent = parent;
 
-        if(jsonObject.has(ReFileConst.DATA_TYPE_PERMISSION)) {
+        if (jsonObject.has(ReFileConst.DATA_TYPE_PERMISSION)) {
             permission = jsonObject.getInt(ReFileConst.DATA_TYPE_PERMISSION);
         } else {
             permission = ReFileConst.PERMISSION_UNKNOWN;
@@ -61,14 +63,20 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
             metaKeys.add(ReFileConst.DATA_TYPE_SIZE);
             metaKeys.add(ReFileConst.DATA_TYPE_PERMISSION);
 
-            for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-                String key = it.next();
-                if(!metaKeys.contains(key)) {
-                    Object obj = jsonObject.get(key);
-                    list.add(new RemoteFile(this, (JSONObject) obj, basePath + "/" + key));
+            if (!singleObj) {
+                for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+                    String key = it.next();
+                    if (!metaKeys.contains(key)) {
+                        Object obj = jsonObject.get(key);
+                        list.add(new RemoteFile(this, (JSONObject) obj, basePath + "/" + key, false));
+                    }
                 }
             }
         }
+    }
+
+    public static RemoteFile getSingleRemoteFile(JSONObject object) throws JSONException {
+        return new RemoteFile(null, object, object.getString(ReFileConst.DATA_TYPE_PATH), true);
     }
 
     public boolean isFile() {
@@ -123,5 +131,17 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
     @Override
     public int compareTo(RemoteFile o) {
         return o.getName().compareTo(this.getName());
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        return (obj instanceof RemoteFile) && ((RemoteFile) obj).getPath().equals(this.getPath());
+    }
+
+    public RemoteFile getSerializeOptimized() {
+        RemoteFile tmp = this;
+        list = new ArrayList<>();
+        parent = null;
+        return tmp;
     }
 }

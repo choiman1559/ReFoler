@@ -16,12 +16,11 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.Nullable;
-
-import io.ktor.http.HttpStatusCode;
 
 public class ReFileCache {
 
@@ -64,6 +63,15 @@ public class ReFileCache {
         return reFileCacheInstance;
     }
 
+    public void clearAllCaches() {
+        memoryCache.clear();
+        for(File file : Objects.requireNonNull(fileListDataDir.listFiles())) {
+            if(file.isFile() && !file.delete()) {
+                break;
+            }
+        }
+    }
+
     public void postDirectRequestListeners(Refoler.ResponsePacket responsePacket) {
         if (directRequestListeners != null && !directRequestListeners.isEmpty()) {
             for (DirectRequestListener directRequestListener : directRequestListeners) {
@@ -90,7 +98,7 @@ public class ReFileCache {
                 requestBuilder.addDevice(device);
                 JsonRequest.postRequestPacket(mContext, RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST, requestBuilder, (response) -> {
                     try {
-                        if (response.getStatusCode().equals(HttpStatusCode.Companion.getOK())) {
+                        if (response.gotOk()) {
                             String rawData = response.getRefolerPacket().getExtraData(0);
                             RemoteFile remoteFile = new RemoteFile(new JSONObject(rawData));
 

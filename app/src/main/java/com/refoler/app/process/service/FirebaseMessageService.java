@@ -23,6 +23,7 @@ import com.refoler.app.backend.consts.RecordConst;
 import com.refoler.app.process.SyncFileListProcess;
 import com.refoler.app.process.db.ReFileCache;
 import com.refoler.app.ui.PrefsKeyConst;
+import com.refoler.app.utils.AESCrypto;
 import com.refoler.app.utils.JsonRequest;
 
 import org.json.JSONException;
@@ -49,9 +50,9 @@ public class FirebaseMessageService extends FirebaseMessagingService {
         try {
             Map<String, String> rawDataMap = message.getData();
             if (rawDataMap.containsKey(EndPointConst.KEY_EXTRA_DATA)) {
-                processMessage(new JSONObject(rawDataMap.get(EndPointConst.KEY_EXTRA_DATA)));
+                processMessage(AESCrypto.processDecrypt(this, new JSONObject(rawDataMap.get(EndPointConst.KEY_EXTRA_DATA))));
             }
-        } catch (JSONException | IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -156,11 +157,15 @@ public class FirebaseMessageService extends FirebaseMessagingService {
     public static void postFcmMessage(Context mContext, JSONObject jsonObject) {
         Refoler.RequestPacket.Builder requestBuilder = Refoler.RequestPacket.newBuilder();
         requestBuilder.addDevice(DeviceWrapper.getSelfDeviceInfo(mContext));
-        requestBuilder.setExtraData(jsonObject.toString());
-        JsonRequest.postRequestPacket(mContext, EndPointConst.SERVICE_TYPE_FCM_POST, requestBuilder, (response) ->
-                Log.d("FcmPostResult", String.format("status: %s, message: %s",
-                        response.getStatusCode().toString(),
-                        response.getRefolerPacket().getExtraData(0))));
+        try {
+            requestBuilder.setExtraData(AESCrypto.processEncrypt(mContext, jsonObject).toString());
+            JsonRequest.postRequestPacket(mContext, EndPointConst.SERVICE_TYPE_FCM_POST, requestBuilder, (response) ->
+                    Log.d("FcmPostResult", String.format("status: %s, message: %s",
+                            response.getStatusCode().toString(),
+                            response.getRefolerPacket().getExtraData(0))));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

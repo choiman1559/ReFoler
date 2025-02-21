@@ -8,14 +8,13 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
-import androidx.core.content.ContextCompat;
 
 import com.kieronquinn.monetcompat.app.MonetCompatActivity;
 import com.kieronquinn.monetcompat.core.MonetCompat;
-import com.refoler.app.Applications;
 import com.refoler.app.R;
 import com.refoler.app.ui.actions.MainFragment;
 import com.refoler.app.ui.holder.SideFragmentHolder;
+import com.refoler.app.utils.JobUtils;
 
 public class MainActivity extends MonetCompatActivity {
 
@@ -40,11 +39,7 @@ public class MainActivity extends MonetCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        if(Applications.isLayoutTablet(this)) {
-            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.ui_bg_toolbar));
-            getWindow().setNavigationBarColor(ContextCompat.getColor(this, R.color.ui_bg_toolbar));
-        }
+        JobUtils.enquiry(this, false);
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {

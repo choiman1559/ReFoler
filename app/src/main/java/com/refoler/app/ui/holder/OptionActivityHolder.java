@@ -10,7 +10,6 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.color.DynamicColors;
 import com.refoler.app.R;
 import com.refoler.app.ui.options.AccountPreferences;
-import com.refoler.app.ui.options.InfoPreferences;
 import com.refoler.app.ui.options.SettingsPreferences;
 
 public class OptionActivityHolder extends AppCompatActivity {
@@ -18,7 +17,6 @@ public class OptionActivityHolder extends AppCompatActivity {
     public final static String INTENT_EXTRA_TYPE = "extra_fragment_type";
     public final static String OPTION_TYPE_SETTINGS = "option_settings";
     public final static String OPTION_TYPE_ACCOUNT = "option_account";
-    public final static String OPTION_TYPE_INFO = "option_info";
 
     private static String title = "Default Message";
     private static String lastType = "";
@@ -43,11 +41,6 @@ public class OptionActivityHolder extends AppCompatActivity {
                 case OPTION_TYPE_ACCOUNT:
                     fragment = new AccountPreferences();
                     title = getString(R.string.options_toolbar_title_account);
-                    break;
-
-                case OPTION_TYPE_INFO:
-                    fragment = new InfoPreferences();
-                    title = getString(R.string.options_toolbar_title_info);
                     break;
 
                 default:

@@ -1,6 +1,7 @@
 package com.refoler.app.ui.holder;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -21,13 +22,16 @@ import java.util.Objects;
 
 public abstract class SideFragment extends Fragment {
 
-    private AppCompatActivity mContext;
+    public AppCompatActivity mContext;
+    public SharedPreferences prefs;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        if (context instanceof AppCompatActivity) mContext = (AppCompatActivity) context;
-        else throw new RuntimeException("Can't get Activity instanceof Context!");
+        if (context instanceof AppCompatActivity) {
+            mContext = (AppCompatActivity) context;
+            prefs = Applications.getPrefs(mContext);
+        } else throw new RuntimeException("Can't get Activity instanceof Context!");
     }
 
     @Override
@@ -41,15 +45,19 @@ public abstract class SideFragment extends Fragment {
     }
 
     public void finishScreen() {
-        if(getContext() == null) throw new IllegalStateException("Context is null!");
+        if (getContext() == null) throw new IllegalStateException("Context is null!");
         SideFragmentHolder.getInstance().popFragment(getContext());
     }
 
     public void setToolbar(MaterialToolbar toolbar) {
+        setToolbar(toolbar, true);
+    }
+
+    public void setToolbar(MaterialToolbar toolbar, boolean setBackground) {
         toolbar.setNavigationOnClickListener((v) -> finishScreen());
-        if(Applications.isLayoutTablet(mContext)) {
+        if (setBackground && Applications.isLayoutTablet(mContext)) {
             Drawable drawable = AppCompatResources.getDrawable(mContext, R.drawable.round_corner_toolbar);
-            Objects.requireNonNull(drawable).setColorFilter(mContext.getColor(R.color.ui_bg),  PorterDuff.Mode.SRC_ATOP);
+            Objects.requireNonNull(drawable).setColorFilter(mContext.getColor(R.color.ui_bg), PorterDuff.Mode.SRC_ATOP);
             toolbar.setBackground(drawable);
         }
     }
@@ -57,7 +65,7 @@ public abstract class SideFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        if(getOnBackDispatcher() != null) {
+        if (getOnBackDispatcher() != null) {
             mContext.getOnBackPressedDispatcher().addCallback(mContext, getOnBackDispatcher());
         }
     }

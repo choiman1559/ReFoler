@@ -12,6 +12,7 @@ public class SideHolderActivity extends AppCompatActivity {
     public static OnSideHolderActivityCreateListener onSideHolderActivityCreateListener;
     public interface OnSideHolderActivityCreateListener {
         void onCreate(AppCompatActivity activity);
+        void onDestroy(AppCompatActivity activity);
     }
 
     @Override
@@ -21,6 +22,14 @@ public class SideHolderActivity extends AppCompatActivity {
 
         if(onSideHolderActivityCreateListener != null) {
             onSideHolderActivityCreateListener.onCreate(this);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(onSideHolderActivityCreateListener != null) {
+            onSideHolderActivityCreateListener.onDestroy(this);
         }
     }
 }

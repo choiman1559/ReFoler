@@ -43,6 +43,9 @@
 
         <activity android:name=".ui.MainActivity"/>
         <activity android:name=".ui.holder.SideHolderActivity"/>
+        <activity android:name=".ui.holder.OptionActivityHolder"/>
+        <activity android:name=".ui.actions.SearchActivity"/>
+        <activity android:name=".ui.options.InfoActivity"/>
 
         <service
             android:name=".process.service.SyncFileListJob"

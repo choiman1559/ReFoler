@@ -48,7 +48,17 @@ public class SideFragmentHolder {
             }
             commitFinalize(castActivity(context), fragment);
         } else {
-            SideHolderActivity.onSideHolderActivityCreateListener = activity -> commitFinalize(activity, fragment);
+            SideHolderActivity.onSideHolderActivityCreateListener = new SideHolderActivity.OnSideHolderActivityCreateListener() {
+                @Override
+                public void onCreate(AppCompatActivity activity) {
+                    commitFinalize(activity, fragment);
+                }
+
+                @Override
+                public void onDestroy(AppCompatActivity activity) {
+                    lastCommitedFragment = null;
+                }
+            };
             context.startActivity(new Intent(context, SideHolderActivity.class));
         }
     }
