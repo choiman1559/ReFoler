@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_selectAll"
+        android:title="@string/refoler_list_menu_select_all" />
+    <item
+        android:id="@+id/menu_moveTo"
+        android:title="@string/refoler_list_menu_move_to" />
+    <item
+        android:id="@+id/menu_copyTo"
+        android:title="@string/refoler_list_menu_copy_to" />
+</menu>

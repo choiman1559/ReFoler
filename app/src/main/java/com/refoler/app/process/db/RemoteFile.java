@@ -56,17 +56,10 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
             lastModified = jsonObject.getLong(ReFileConst.DATA_TYPE_LAST_MODIFIED);
             isIndexSkipped = jsonObject.getBoolean(ReFileConst.DATA_TYPE_IS_SKIPPED);
 
-            ArrayList<String> metaKeys = new ArrayList<>();
-            metaKeys.add(ReFileConst.DATA_TYPE_IS_FILE);
-            metaKeys.add(ReFileConst.DATA_TYPE_LAST_MODIFIED);
-            metaKeys.add(ReFileConst.DATA_TYPE_IS_SKIPPED);
-            metaKeys.add(ReFileConst.DATA_TYPE_SIZE);
-            metaKeys.add(ReFileConst.DATA_TYPE_PERMISSION);
-
             if (!singleObj) {
                 for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
                     String key = it.next();
-                    if (!metaKeys.contains(key)) {
+                    if (!isKeyMetadata(key)) {
                         Object obj = jsonObject.get(key);
                         list.add(new RemoteFile(this, (JSONObject) obj, basePath + "/" + key, false));
                     }
@@ -143,5 +136,15 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
         list = new ArrayList<>();
         parent = null;
         return tmp;
+    }
+
+    public static boolean isKeyMetadata(String key) {
+        ArrayList<String> metaKeys = new ArrayList<>();
+        metaKeys.add(ReFileConst.DATA_TYPE_IS_FILE);
+        metaKeys.add(ReFileConst.DATA_TYPE_LAST_MODIFIED);
+        metaKeys.add(ReFileConst.DATA_TYPE_IS_SKIPPED);
+        metaKeys.add(ReFileConst.DATA_TYPE_SIZE);
+        metaKeys.add(ReFileConst.DATA_TYPE_PERMISSION);
+        return metaKeys.contains(key);
     }
 }

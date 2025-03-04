@@ -32,17 +32,5 @@
             app:title="@string/refoler_detail_title"/>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <include layout="@layout/include_fragment_refile_detail"/>
-
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/downloadButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:text="@string/refoler_detail_action_download"
-        android:textColor="@color/ui_bg"
-        app:icon="@drawable/ic_fluent_cloud_arrow_down_24_regular"
-        app:iconTint="@color/ui_bg"
-        app:layout_dodgeInsetEdges="bottom" />
+    <include layout="@layout/include_device_detail"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

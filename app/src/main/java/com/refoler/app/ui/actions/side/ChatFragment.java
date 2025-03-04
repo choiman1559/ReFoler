@@ -1,8 +1,9 @@
 package com.refoler.app.ui.actions.side;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,11 +19,13 @@ import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.refoler.Refoler;
+import com.refoler.app.Applications;
 import com.refoler.app.R;
 import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.WebSocketWrapper;
@@ -52,7 +55,6 @@ import io.noties.markwon.MarkwonConfiguration;
 
 public class ChatFragment extends SideFragment {
 
-    Activity mContext;
     EditText messageEditText;
     ImageButton sendButton;
     ImageButton removeAllButton;
@@ -61,13 +63,6 @@ public class ChatFragment extends SideFragment {
     DbHelper.AppDatabase appDatabase;
     List<ChatDatabase.ChatHistory> chatMessages = new ArrayList<>();
     ChatAdapter chatAdapter;
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof Activity) mContext = (Activity) context;
-        else throw new RuntimeException("Can't get Activity instanceof Context!");
-    }
 
     @Override
     public OnBackPressedCallback getOnBackDispatcher() {
@@ -111,6 +106,13 @@ public class ChatFragment extends SideFragment {
             chatMessages.clear();
             chatMessages.addAll(appDatabase.chatDao().getAll());
 
+            for(ChatDatabase.ChatHistory chatHistory : chatMessages) {
+                if(chatHistory.status == ChatDatabase.STATUS_PENDING) {
+                    chatHistory.status = ChatDatabase.STATUS_CANCELLED;
+                    chatMessages.set(findIndexOf(chatHistory), chatHistory);
+                }
+            }
+
             mContext.runOnUiThread(() -> {
                 chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
                 chatAdapter.notifyDataSetChanged();
@@ -147,8 +149,11 @@ public class ChatFragment extends SideFragment {
             }
         });
 
-        MaterialToolbar toolbar = baseView.findViewById(R.id.toolbar);
-        setToolbar(toolbar, false);
+        MaterialToolbar toolbar = getToolbar(false);
+        setToolbar(toolbar);
+        if(Applications.isLayoutTablet(mContext)) {
+            toolbar.setBackgroundColor(ContextCompat.getColor(mContext, R.color.ui_bg));
+        }
     }
 
     public void requestChat(ChatDatabase.ChatHistory chat) {
@@ -219,11 +224,13 @@ public class ChatFragment extends SideFragment {
 
     private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
 
+        private final Context mContext;
         private final Markwon markwon;
         private final List<ChatDatabase.ChatHistory> chatMessages;
         private final ConcurrentHashMap<Integer, ArrayList<String>> tokensCache;
 
         public ChatAdapter(Context context, List<ChatDatabase.ChatHistory> chatMessages) {
+            this.mContext = context;
             this.chatMessages = chatMessages;
             this.tokensCache = new ConcurrentHashMap<>();
             this.markwon = Markwon.builder(context)
@@ -236,6 +243,11 @@ public class ChatFragment extends SideFragment {
         }
 
         private void linkResolver(Context context, String link) {
+            if(link.startsWith("http") && !link.contains("$path;")) {
+                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(link)));
+                return;
+            }
+
             String[] metaInfo = link.split(LlmConst.RAW_DATA_PATH_TOKEN);
             Refoler.Device device = null;
 
@@ -263,7 +275,7 @@ public class ChatFragment extends SideFragment {
                 }
             }
 
-            SideFragmentHolder.getInstance().pushFragment(context,
+            SideFragmentHolder.getInstance().pushFragment(context, true,
                     new ReFileFragment(device, filePath)
                             .isFetchDbOnFirstLoad(true)
                             .isFindingFile(true));
@@ -307,13 +319,16 @@ public class ChatFragment extends SideFragment {
 
         public static class AssistanceViewHolder extends ChatViewHolder {
 
+            Context mContext;
             ProgressBar chatProcessBar;
             ImageView chatErrorIcon;
             TextView chatProcessTextview;
             TextView chatErrorTextview;
 
-            public AssistanceViewHolder(@NonNull View itemView) {
+            public AssistanceViewHolder(Context context, @NonNull View itemView) {
                 super(itemView);
+                mContext = context;
+
                 chatProcessBar = itemView.findViewById(R.id.chatProcessBar);
                 chatErrorIcon = itemView.findViewById(R.id.chatErrorIcon);
                 chatProcessTextview = itemView.findViewById(R.id.chatProcessTextview);
@@ -349,11 +364,19 @@ public class ChatFragment extends SideFragment {
                 messageTextview.setVisibility(View.GONE);
             }
 
-            public void setError() {
+            public void setCancelled() {
+                setError(mContext.getString(R.string.llm_chat_info_error_cancelled));
+            }
+
+            public void setError(@Nullable String message) {
                 chatProcessBar.setVisibility(View.GONE);
                 chatErrorIcon.setVisibility(View.VISIBLE);
                 chatProcessTextview.setVisibility(View.GONE);
                 chatErrorTextview.setVisibility(View.VISIBLE);
+
+                if(message != null) {
+                    chatErrorTextview.setText(message);
+                }
 
                 messageTextview.setText("");
                 messageTextview.setVisibility(View.GONE);
@@ -401,7 +424,7 @@ public class ChatFragment extends SideFragment {
             if (viewType == ChatDatabase.SENDER_ASSISTANCE.hashCode()) {
                 View view = LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.cardview_chat_assistance, parent, false);
-                return new AssistanceViewHolder(view);
+                return new AssistanceViewHolder(mContext, view);
             } else if (viewType == ChatDatabase.SENDER_USER.hashCode()) {
                 View view = LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.cardview_chat_user, parent, false);
@@ -420,9 +443,10 @@ public class ChatFragment extends SideFragment {
                     case ChatDatabase.STATUS_PENDING -> assistanceViewHolder.setProgress();
                     case ChatDatabase.STATUS_COMPLETE ->
                             assistanceViewHolder.setMessageComplete(markwon, chatMessage.message);
-                    case ChatDatabase.STATUS_ERROR -> assistanceViewHolder.setError();
+                    case ChatDatabase.STATUS_ERROR -> assistanceViewHolder.setError(null);
                     case ChatDatabase.STATUS_RECEIVING ->
                             assistanceViewHolder.appendMessage(getLatestToken(chatMessage));
+                    case ChatDatabase.STATUS_CANCELLED -> assistanceViewHolder.setCancelled();
                 }
             } else {
                 holder.setMessage(chatMessage.message);

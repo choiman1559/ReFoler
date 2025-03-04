@@ -35,7 +35,7 @@ class WebSocketWrapper(private val context: Context) {
     }
 
     fun postRequestPacket(requestPacket: RequestPacket.Builder) {
-        val uid = Applications.getPrefs(context).getString(PrefsKeyConst.PREFS_KEY_UID, "")
+        val uid = Applications.getUid(context)
         if (uid.isNullOrEmpty()) {
             throw IllegalStateException("UID is not set")
         }

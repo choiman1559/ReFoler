@@ -30,6 +30,7 @@ import com.refoler.app.R;
 import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.consts.RecordConst;
 import com.refoler.app.process.SyncFileListProcess;
+import com.refoler.app.process.actions.FSEditSyncJob;
 import com.refoler.app.process.service.SyncFileListService;
 import com.refoler.app.ui.PrefsKeyConst;
 import com.refoler.app.ui.actions.side.ChatFragment;
@@ -104,6 +105,7 @@ public class MainFragment extends Fragment {
 
             try {
                 loadDeviceList(true);
+                Applications.initFileActionWorker(mContext);
             } catch (JSONException | IOException e) {
                 throw new RuntimeException(e);
             }
@@ -258,7 +260,7 @@ public class MainFragment extends Fragment {
             this.deviceIcon.setImageResource(DeviceWrapper.getDeviceFormBitmap(device.getDeviceFormfactor()));
             this.deviceName.setText(device.getDeviceName());
             this.itemHolderView.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(context, new ReFileFragment(device, null)));
-            this.deviceDetail.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(context, new DeviceDetailFragment().setDevice(device)));
+            this.deviceDetail.setOnClickListener((v) -> SideFragmentHolder.getInstance().replaceFragment(context, false, new DeviceDetailFragment().setDevice(device)));
             return itemHolderView;
         }
     }

@@ -33,7 +33,7 @@ public class SyncFileListJob extends JobService {
 
     @Override
     public boolean onStartJob(JobParameters params) {
-        if(Applications.getPrefs(context).getString(PrefsKeyConst.PREFS_KEY_UID, "").isEmpty()) {
+        if(Applications.getUid(context).isEmpty()) {
             return false;
         }
 

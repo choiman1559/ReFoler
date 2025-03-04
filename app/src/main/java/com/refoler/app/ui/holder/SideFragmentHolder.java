@@ -36,12 +36,16 @@ public class SideFragmentHolder {
     }
 
     public void replaceFragment(Context context, SideFragment fragment) {
-        fragmentStack.clear();
-        lastCommitedFragment = null;
-        pushFragment(context, fragment);
+        replaceFragment(context, true, fragment);
     }
 
-    public void pushFragment(Context context, SideFragment fragment) {
+    public void replaceFragment(Context context, boolean overrideToolbar, SideFragment fragment) {
+        fragmentStack.clear();
+        lastCommitedFragment = null;
+        pushFragment(context, overrideToolbar, fragment);
+    }
+
+    public void pushFragment(Context context, boolean overrideToolbar, SideFragment fragment) {
         if (Applications.isLayoutTablet(context)) {
             if (lastCommitedFragment != null) {
                 fragmentStack.push(lastCommitedFragment);
@@ -59,7 +63,8 @@ public class SideFragmentHolder {
                     lastCommitedFragment = null;
                 }
             };
-            context.startActivity(new Intent(context, SideHolderActivity.class));
+            context.startActivity(new Intent(context, SideHolderActivity.class)
+                    .putExtra(SideHolderActivity.SIDE_HOLDER_OVERRIDE_TOOLBAR, overrideToolbar));
         }
     }
 

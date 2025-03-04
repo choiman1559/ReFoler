@@ -79,6 +79,16 @@
     <string name="refoler_list_item_parent">Parent folder</string>
     <string name="refoler_list_item_internal_storage">Internal Storage</string>
 
+    <string name="refoler_list_menu_select">Select</string>
+    <string name="refoler_list_menu_select_all">Select All</string>
+    <string name="refoler_list_menu_move_to">Move To…</string>
+    <string name="refoler_list_menu_copy_to">Copy To…</string>
+    <string name="refoler_list_menu_new_folder">New Folder</string>
+    <string name="refoler_list_menu_new_file">New File</string>
+    <string name="refoler_list_menu_rename">Rename</string>
+    <string name="refoler_list_menu_delete_title">Delete</string>
+    <string name="refoler_list_menu_delete_confirm">Are you sure to delete?\nThis operation cannot be undone.</string>
+
     <string name="options_toolbar_title_settings">General Settings</string>
     <string name="options_toolbar_title_account">Account Options</string>
     <string name="options_toolbar_title_info">App Information</string>
@@ -99,6 +109,8 @@
 
     <string name="option_settings_item_folder_first_title">List folder first</string>
     <string name="option_settings_item_folder_first_desc">Folders are always listed first, followed by the remaining files</string>
+    <string name="option_settings_item_finish_on_back_title">Close file list on back press</string>
+    <string name="option_settings_item_finish_on_back_desc">Finish file list when back button is pressed instead of go parent folder</string>
     <string name="option_settings_item_sort_by_title">Selects list sort order</string>
     <string name="option_settings_item_index_hidden_title">Index hidden files</string>
     <string name="option_settings_item_index_hidden_desc">Indexes hidden files and folders whose names start with "." (dot)</string>
@@ -141,5 +153,25 @@
     <string name="llm_chat_sender_assistance">ReFoler AI</string>
     <string name="llm_chat_info_awaiting">Awaiting response…</string>
     <string name="llm_chat_info_error_occurred">Error occurred!</string>
+    <string name="llm_chat_info_error_cancelled">Response cancelled</string>
     <string name="llm_chat_info_error_device_not_found">Error: Target Device not found!</string>
+
+    <string name="device_detail_title">Device Detail</string>
+    <string name="device_detail_action_remove">Remove</string>
+    <string name="device_detail_action_request_query">Request Query</string>
+    <string name="device_detail_last_queried_title">Last queried</string>
+    <string name="device_detail_last_queried_desc">HH:mm:ss yyyy</string>
+    <string name="device_detail_last_queried_desc_none">Never queried</string>
+    <string name="device_detail_deny_file_action_title">Deny file access</string>
+    <string name="device_detail_deny_file_action_desc">Rejects any file download request\nfrom this device</string>
+    <string name="device_detail_remove_information">Remove requires least 3 days after last queried</string>
+
+    <string name="action_notification_download_channel">Download File</string>
+    <string name="action_notification_download_channel_desc">Notification for download file progress</string>
+    <string name="action_notification_download_title">Downloading file</string>
+    <string name="action_notification_download_desc">Now downloading file: %s</string>
+    <string name="action_notification_upload_channel">Upload File</string>
+    <string name="action_notification_upload_channel_desc">Notification for upload file progress</string>
+    <string name="action_notification_upload_title">Uploading file</string>
+    <string name="action_notification_upload_desc">Now uploading file: %s</string>
 </resources>

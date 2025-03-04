@@ -1,6 +1,5 @@
 package com.refoler.app.ui.actions.side;
 
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -14,28 +13,34 @@ import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
+import androidx.core.app.NotificationCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.refoler.FileAction;
 import com.refoler.Refoler;
+import com.refoler.app.Applications;
 import com.refoler.app.R;
+import com.refoler.app.backend.DeviceWrapper;
+import com.refoler.app.backend.consts.DirectActionConst;
+import com.refoler.app.process.actions.FileActionRequester;
+import com.refoler.app.process.actions.impl.misc.DownloadAction;
+import com.refoler.app.process.actions.impl.misc.HashAction;
 import com.refoler.app.process.db.RemoteFile;
-import com.refoler.app.process.service.FileAction;
 import com.refoler.app.ui.holder.SideFragment;
 import com.refoler.app.ui.utils.PrefsCard;
 import com.refoler.app.ui.utils.ToastHelper;
 import com.refoler.app.utils.BillingHelper;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Objects;
 
 public class FileDetailFragment extends SideFragment {
 
-    AppCompatActivity mContext;
     RemoteFile remoteFile;
     Refoler.Device device;
 
@@ -50,13 +55,6 @@ public class FileDetailFragment extends SideFragment {
         this.remoteFile = remoteFile;
         this.device = device;
         this.fileIconResId = fileIconResId;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        if (context instanceof Activity) mContext = (AppCompatActivity) context;
-        else throw new RuntimeException("Can't get Activity instanceof Context!");
     }
 
     @Nullable
@@ -86,11 +84,11 @@ public class FileDetailFragment extends SideFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        MaterialToolbar toolbar = view.findViewById(R.id.toolbar);
-        setToolbar(toolbar);
-        view.setBackgroundColor(ContextCompat.getColor(mContext, R.color.ui_bg));
+        MaterialToolbar toolbar = getToolbar(false);
+        setToolbar(toolbar, getString(R.string.refoler_detail_title));
+        setToolbarBackground(view);
 
-        if(savedInstanceState != null) {
+        if (savedInstanceState != null) {
             device = (Refoler.Device) savedInstanceState.getSerializable("device");
             remoteFile = (RemoteFile) savedInstanceState.getSerializable("remoteFile");
             fileIconResId = savedInstanceState.getInt("fileIconResId");
@@ -122,13 +120,16 @@ public class FileDetailFragment extends SideFragment {
         fileDateItem.setDescription(new SimpleDateFormat(getString(R.string.default_date_format), Locale.getDefault()).format(remoteFile.getLastModified()));
         fileSizeItem.setDescription(remoteFile.getSize() + " Bytes");
 
-        if(remoteFile.hasPermissionInfo()) {
+        if (remoteFile.hasPermissionInfo()) {
             ArrayList<String> permissionInfo = new ArrayList<>();
-            if(remoteFile.canRead()) permissionInfo.add(getString(R.string.refoler_detail_permission_readable));
-            if(remoteFile.canWrite()) permissionInfo.add(getString(R.string.refoler_detail_permission_writable));
-            if(remoteFile.canExecute()) permissionInfo.add(getString(R.string.refoler_detail_permission_executable));
+            if (remoteFile.canRead())
+                permissionInfo.add(getString(R.string.refoler_detail_permission_readable));
+            if (remoteFile.canWrite())
+                permissionInfo.add(getString(R.string.refoler_detail_permission_writable));
+            if (remoteFile.canExecute())
+                permissionInfo.add(getString(R.string.refoler_detail_permission_executable));
 
-            if(!permissionInfo.isEmpty()) {
+            if (!permissionInfo.isEmpty()) {
                 filePermissionItem.setDescription(String.join(", ", permissionInfo));
             } else {
                 filePermissionItem.setDescription(getString(R.string.refoler_detail_permission_none));
@@ -144,7 +145,44 @@ public class FileDetailFragment extends SideFragment {
         }
 
         downloadButton.setOnClickListener(v -> {
+            try {
+                downloadButton.setEnabled(false);
+                FileAction.ActionRequest.Builder actionRequest = FileAction.ActionRequest.newBuilder();
+                actionRequest.setActionType(FileAction.ActionType.OP_UPLOAD);
+                actionRequest.addTargetFiles(remoteFile.getPath());
+                FileActionRequester.setChallengeCode(device, actionRequest);
 
+                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, getString(R.string.action_notification_upload_channel))
+                        .setSmallIcon(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_arrow_download_24_regular)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setOnlyAlertOnce(true)
+                        .setGroupSummary(false)
+                        .setOngoing(true)
+                        .setAutoCancel(false)
+                        .setContentTitle(mContext.getString(R.string.action_notification_upload_title))
+                        .setProgress(0, 0, true);
+
+                FileActionRequester.getInstance().requestAction(mContext, device, actionRequest, (device, uploadResponse) -> {
+                    Applications.cancelNotification(mContext, actionRequest.getChallengeCode().hashCode());
+                    FileAction.ActionRequest.Builder downloadRequest = FileAction.ActionRequest.newBuilder();
+                    downloadRequest.setActionType(FileAction.ActionType.OP_DOWNLOAD);
+                    downloadRequest.addTargetFiles(remoteFile.getPath());
+
+                    Applications.publishNotification(mContext,
+                            mContext.getString(R.string.action_notification_upload_channel),
+                            mContext.getString(R.string.action_notification_upload_desc),
+                            downloadRequest.hashCode(), mBuilder);
+
+                    DownloadAction downloadAction = new DownloadAction();
+                    downloadAction.performActionOp(mContext, DeviceWrapper.getSelfDeviceInfo(mContext), downloadRequest.build(), downloadResponse -> {
+                        if(downloadResponse.getResult(0).getResultSuccess()) {
+                            mContext.runOnUiThread(() -> downloadButton.setEnabled(true));
+                        }
+                    });
+                });
+            } catch (JSONException | IOException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         fileHashItem.setOnClickListener(v -> {
@@ -154,11 +192,22 @@ public class FileDetailFragment extends SideFragment {
                 fileHashItem.setDescription(getString(R.string.refoler_detail_process_hash));
 
                 try {
-                    FileAction.getInstance().requestFileHash(mContext, device, remoteFile, (responsePacket -> {
-                        String hash = responsePacket.getExtraDataCount() >= 2 ? responsePacket.getExtraData(1) : null;
-                        mContext.runOnUiThread(() -> fileHashItem.setDescription(Objects.requireNonNullElse(hash, "Error while getting file hash")));
-                        if (hash != null) {
-                            isHashReceived = true;
+                    FileAction.ActionRequest.Builder actionRequest = FileAction.ActionRequest.newBuilder();
+                    actionRequest.setActionType(FileAction.ActionType.OP_HASH);
+                    actionRequest.addTargetFiles(remoteFile.getPath());
+                    actionRequest.setDestDir(HashAction.DEFAULT_MD5);
+
+                    FileActionRequester.getInstance().requestAction(mContext, device, actionRequest, (device, response) -> mContext.runOnUiThread(() -> {
+                        if (response.getOverallStatus().equals(DirectActionConst.RESULT_OK)) {
+                            FileAction.ActionResult actionResult = response.getResult(0);
+                            if (actionResult.getResultSuccess()) {
+                                fileHashItem.setDescription(actionResult.getExtraData(0));
+                                isHashReceived = true;
+                            } else {
+                                fileHashItem.setDescription(getString(R.string.refoler_detail_error_hash));
+                            }
+                        } else {
+                            fileHashItem.setDescription(getString(R.string.refoler_detail_error_hash));
                         }
                     }));
                 } catch (Exception e) {

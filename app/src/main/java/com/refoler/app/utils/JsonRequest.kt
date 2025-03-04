@@ -6,7 +6,6 @@ import com.refoler.Refoler
 import com.refoler.app.Applications
 import com.refoler.app.backend.consts.PacketConst
 import com.refoler.app.backend.ResponseWrapper
-import com.refoler.app.ui.PrefsKeyConst
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -43,7 +42,7 @@ class JsonRequest {
             requestPacket: Refoler.RequestPacket.Builder,
             event: OnReceivedCompleteListener?
         ) {
-            val uid = Applications.getPrefs(context).getString(PrefsKeyConst.PREFS_KEY_UID, "")
+            val uid = Applications.getUid(context)
             if (uid.isNullOrEmpty()) {
                 throw IllegalStateException("UID is not set")
             }

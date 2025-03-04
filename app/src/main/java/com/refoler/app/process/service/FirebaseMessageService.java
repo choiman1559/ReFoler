@@ -21,11 +21,14 @@ import com.refoler.app.backend.consts.EndPointConst;
 import com.refoler.app.backend.consts.PacketConst;
 import com.refoler.app.backend.consts.RecordConst;
 import com.refoler.app.process.SyncFileListProcess;
+import com.refoler.app.process.actions.FileActionRequester;
+import com.refoler.app.process.actions.FileActionWorker;
 import com.refoler.app.process.db.ReFileCache;
 import com.refoler.app.ui.PrefsKeyConst;
 import com.refoler.app.utils.AESCrypto;
 import com.refoler.app.utils.JsonRequest;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -49,11 +52,54 @@ public class FirebaseMessageService extends FirebaseMessagingService {
         super.onMessageReceived(message);
         try {
             Map<String, String> rawDataMap = message.getData();
-            if (rawDataMap.containsKey(EndPointConst.KEY_EXTRA_DATA)) {
-                processMessage(AESCrypto.processDecrypt(this, new JSONObject(rawDataMap.get(EndPointConst.KEY_EXTRA_DATA))));
+            String rawMessage = Objects.requireNonNullElse(rawDataMap.get(EndPointConst.KEY_EXTRA_DATA), "");
+
+            if (rawDataMap.containsKey(EndPointConst.KEY_EXTRA_DATA) && !rawMessage.isEmpty()) {
+                if (rawMessage.startsWith(EndPointConst.PREFIX_FCM_PROXY.split("=")[0])) {
+                    processFcmProxy(this, rawMessage);
+                } else {
+                    processMessage(AESCrypto.processDecrypt(this, new JSONObject(rawMessage)));
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void processFcmProxy(Context mContext, String challengeCode) {
+        final Refoler.Device selfInfo = DeviceWrapper.getSelfDeviceInfo(mContext);
+        Refoler.RequestPacket.Builder requestBuilder = Refoler.RequestPacket.newBuilder();
+        requestBuilder.addDevice(selfInfo);
+        requestBuilder.setActionName(RecordConst.SERVICE_ACTION_TYPE_GET);
+        requestBuilder.setExtraData(challengeCode);
+
+        try {
+            String[] challengeData = challengeCode.split("=");
+            JSONObject jsonObject = new JSONObject(challengeData[1]);
+
+            checkFcmTarget : if(jsonObject.getString(EndPointConst.FCM_KEY_SENT_DEVICE).equals(selfInfo.getDeviceId())) {
+                return;
+            } else {
+                JSONArray jsonArray = jsonObject.getJSONArray(EndPointConst.FCM_KEY_LIST_TARGETS);
+                for(int i = 0; i < jsonArray.length(); i += 1) {
+                    if(selfInfo.getDeviceId().equals(jsonArray.getString(i))) {
+                        break checkFcmTarget;
+                    }
+                }
+                return;
+            }
+
+            JsonRequest.postRequestPacket(mContext, EndPointConst.SERVICE_TYPE_FCM_POST, requestBuilder, (response) -> {
+                if(response.gotOk()) {
+                    try {
+                        processMessage(AESCrypto.processDecrypt(mContext, new JSONObject(response.getRefolerPacket().getExtraData(0))));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -78,57 +124,56 @@ public class FirebaseMessageService extends FirebaseMessagingService {
         if (isTargeted(this, responsePacket.getDeviceList())) switch (actionType) {
             case RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST -> // Download file list
                     ReFileCache.getInstance(this).postDirectRequestListeners(responsePacket);
-            case RecordConst.SERVICE_TYPE_TRANSFER_FILE -> {
-                // TODO: Download file blob
-            }
-            case DirectActionConst.SERVICE_TYPE_FILE_ACTION -> Objects.requireNonNull(FileAction
-                    .getInstance().requestListenerMap
-                    .get(responsePacket.getExtraData(0))).onReceive(responsePacket);
+            case DirectActionConst.SERVICE_TYPE_FILE_ACTION -> // Notify file action result to UI
+                    FileActionRequester.getInstance().responseAction(responsePacket.getDevice(0), responsePacket.getFileAction());
+            default -> throw new IllegalStateException("Unknown action type: " + actionType);
         }
     }
 
     private void processRequester(String actionType, Refoler.RequestPacket requestPacket) {
-        if (isTargeted(this, requestPacket.getDeviceList())) switch (actionType) {
-            case RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST -> {
-                // Upload file list
-                Refoler.ResponsePacket.Builder responseBuilder = Refoler.ResponsePacket.newBuilder();
-                responseBuilder.addDevice(requestPacket.getDevice(1));
-                responseBuilder.addDevice(requestPacket.getDevice(0));
+        if (isTargeted(this, requestPacket.getDeviceList())) {
+            Refoler.Device thisDevice = requestPacket.getDevice(1);
+            Refoler.Device requester = requestPacket.getDevice(0);
 
-                SyncFileListProcess.getInstance().addListener(new SyncFileListProcess.OnSyncFileListProcessListener() {
-                    @Override
-                    public void onSyncFileListProcessFinished(ResponseWrapper responseWrapper) {
-                        responseBuilder.setStatus(responseWrapper.getRefolerPacket().getStatus());
-                        responseBuilder.setErrorCause(responseWrapper.getRefolerPacket().getErrorCause());
+            switch (actionType) {
+                case RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST -> {
+                    // Upload file list
+                    Refoler.ResponsePacket.Builder responseBuilder = Refoler.ResponsePacket.newBuilder();
+                    responseBuilder.addDevice(thisDevice);
+                    responseBuilder.addDevice(requester);
 
-                        try {
-                            postResponseMessage(FirebaseMessageService.this, RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST, responseBuilder.build());
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                    SyncFileListProcess.getInstance().addListener(new SyncFileListProcess.OnSyncFileListProcessListener() {
+                        @Override
+                        public void onSyncFileListProcessFinished(ResponseWrapper responseWrapper) {
+                            responseBuilder.setStatus(responseWrapper.getRefolerPacket().getStatus());
+                            responseBuilder.setErrorCause(responseWrapper.getRefolerPacket().getErrorCause());
+
+                            try {
+                                postResponseMessage(FirebaseMessageService.this, RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST, responseBuilder.build());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
-                    }
 
-                    @Override
-                    public void onSyncFileListProcessFailed(Throwable throwable) {
-                        responseBuilder.setStatus(PacketConst.STATUS_ERROR);
-                        responseBuilder.setErrorCause(throwable.toString());
+                        @Override
+                        public void onSyncFileListProcessFailed(Throwable throwable) {
+                            responseBuilder.setStatus(PacketConst.STATUS_ERROR);
+                            responseBuilder.setErrorCause(throwable.toString());
 
-                        try {
-                            postResponseMessage(FirebaseMessageService.this, RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST, responseBuilder.build());
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            try {
+                                postResponseMessage(FirebaseMessageService.this, RecordConst.SERVICE_TYPE_DEVICE_FILE_LIST, responseBuilder.build());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
-                    }
-                });
+                    });
 
-                SyncFileListService.startService(this);
+                    SyncFileListService.startService(this);
+                }
+                case DirectActionConst.SERVICE_TYPE_FILE_ACTION -> // Perform requested file action
+                        FileActionWorker.getInstance().handleActionFromRemote(this, requester, requestPacket.getFileAction());
+                default -> throw new IllegalStateException("Unknown action type: " + actionType);
             }
-
-            case RecordConst.SERVICE_TYPE_TRANSFER_FILE -> {
-                // TODO: Upload file blob
-            }
-            case DirectActionConst.SERVICE_TYPE_FILE_ACTION ->
-                    FileActionResponse.responseActions(this, requestPacket);
         }
     }
 
@@ -143,7 +188,7 @@ public class FirebaseMessageService extends FirebaseMessagingService {
         jsonObject.put(DirectActionConst.KEY_ACTION_TYPE, actionType);
         jsonObject.put(DirectActionConst.KEY_ACTION_SIDE, DirectActionConst.ACTION_SIDE_RESPONSER);
         jsonObject.put(DirectActionConst.KEY_RESPONSE_PACKET, JsonFormat.printer().print(responsePacket));
-        postFcmMessage(context, jsonObject);
+        postFcmMessage(context, jsonObject, responsePacket.getDeviceList());
     }
 
     public static void postRequestMessage(Context context, String actionType, Refoler.RequestPacket requestPacket) throws JSONException, IOException {
@@ -151,12 +196,15 @@ public class FirebaseMessageService extends FirebaseMessagingService {
         jsonObject.put(DirectActionConst.KEY_ACTION_TYPE, actionType);
         jsonObject.put(DirectActionConst.KEY_ACTION_SIDE, DirectActionConst.ACTION_SIDE_REQUESTER);
         jsonObject.put(DirectActionConst.KEY_REQUEST_PACKET, JsonFormat.printer().print(requestPacket));
-        postFcmMessage(context, jsonObject);
+        postFcmMessage(context, jsonObject, requestPacket.getDeviceList());
     }
 
-    public static void postFcmMessage(Context mContext, JSONObject jsonObject) {
+    public static void postFcmMessage(Context mContext, JSONObject jsonObject, List<Refoler.Device> devices) {
         Refoler.RequestPacket.Builder requestBuilder = Refoler.RequestPacket.newBuilder();
         requestBuilder.addDevice(DeviceWrapper.getSelfDeviceInfo(mContext));
+        requestBuilder.addAllDevice(devices);
+        requestBuilder.setActionName(RecordConst.SERVICE_ACTION_TYPE_POST);
+
         try {
             requestBuilder.setExtraData(AESCrypto.processEncrypt(mContext, jsonObject).toString());
             JsonRequest.postRequestPacket(mContext, EndPointConst.SERVICE_TYPE_FCM_POST, requestBuilder, (response) ->

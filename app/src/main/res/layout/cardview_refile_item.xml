@@ -52,6 +52,22 @@
             android:textColor="@color/ui_fg_secondary" />
     </LinearLayout>
 
+    <androidx.appcompat.widget.AppCompatCheckBox
+        android:id="@+id/remoteFileSelect"
+        android:layout_width="wrap_content"
+        android:layout_height="47dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="8dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="false"
+        android:focusable="false"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:visibility="invisible"
+        app:srcCompat="@drawable/ic_more_vert_black_24dp"
+        app:tint="@color/ui_accent"
+        tools:ignore="ContentDescription" />
+
     <ImageView
         android:id="@+id/remoteFileDetail"
         android:layout_width="wrap_content"

@@ -7,46 +7,119 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:transitionGroup="true"
+    android:backgroundTint="@color/ui_bg_toolbar"
     tools:ignore="HardcodedText">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
-        android:layout_height="210dp"
-        android:background="@android:color/transparent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/round_corner_toolbar"
+        android:backgroundTint="@color/ui_bg_toolbar"
         android:fitsSystemWindows="true"
-        app:elevation="0dp">
+        app:elevation="0dp"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <com.google.android.material.appbar.CollapsingToolbarLayout
-            android:id="@+id/collapsing_toolbar"
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fitsSystemWindows="true"
-            app:collapsedTitleTextAppearance="@style/TextAppearance.App.CollapsingToolbar.Collapsed"
-            app:contentScrim="@color/ui_bg_toolbar"
-            app:expandedTitleMarginEnd="24dp"
-            app:expandedTitleMarginStart="24dp"
-            app:expandedTitleTextAppearance="@style/TextAppearance.App.CollapsingToolbar.Expanded"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
-            app:maxLines="2"
-            app:scrimAnimationDuration="50"
-            app:scrimVisibleHeightTrigger="160dp"
-            app:statusBarScrim="@android:color/transparent"
-            app:titleCollapseMode="fade">
-
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:minHeight="?attr/actionBarSize"
-                app:layout_collapseMode="pin"
-                app:navigationIcon="@drawable/back_btn_selector"
-                app:navigationIconTint="@color/ui_fg"
-                app:title="@string/refoler_detail_title" />
-        </com.google.android.material.appbar.CollapsingToolbarLayout>
+            android:background="@color/ui_bg_toolbar"
+            app:contentScrim="@color/ui_bg"
+            app:layout_collapseMode="pin"
+            app:navigationIcon="@drawable/back_btn_selector"
+            app:navigationIconTint="@color/ui_fg"
+            app:title="@string/refoler_detail_title"/>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <include layout="@layout/include_fragment_refile_detail"/>
+    <androidx.core.widget.NestedScrollView xmlns:item="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        item:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.refoler.app.ui.utils.PrefsCard
+                android:id="@+id/fileNameItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                item:cardDescription="Unknown"
+                item:cardIconAlignEnd="true"
+                item:cardIconDrawable="@drawable/ic_fluent_document_24_regular"
+                item:cardTitle="@string/refoler_detail_data_name"
+                item:cardType="title|description|icon" />
+
+            <com.refoler.app.ui.utils.PrefsCard
+                android:id="@+id/filePathItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                item:cardDescription="Unknown"
+                item:cardTitle="@string/refoler_detail_data_path"
+                item:cardType="title|description" />
+
+            <com.refoler.app.ui.utils.PrefsCard
+                android:id="@+id/fileDateItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                item:cardDescription="Unknown"
+                item:cardTitle="@string/refoler_detail_data_date"
+                item:cardType="title|description" />
+
+            <com.refoler.app.ui.utils.PrefsCard
+                android:id="@+id/fileSizeItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                item:cardDescription="Unknown"
+                item:cardTitle="@string/refoler_detail_data_size"
+                item:cardType="title|description" />
+
+            <com.refoler.app.ui.utils.PrefsCard
+                android:id="@+id/filePermissionItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                item:cardDescription="Unknown"
+                item:cardTitle="@string/refoler_detail_data_permission"
+                item:cardType="title|description" />
+
+            <com.refoler.app.ui.utils.PrefsCard
+                android:id="@+id/fileHashItem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                item:cardDescription="Click here to get file hash"
+                item:cardTitle="@string/refoler_detail_data_hash"
+                item:cardType="title|description" />
+
+            <LinearLayout
+                android:id="@+id/waringLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                tools:ignore="UseCompoundDrawables">
+
+                <ImageView
+                    android:layout_width="23dp"
+                    android:layout_height="23dp"
+                    android:layout_marginHorizontal="24dp"
+                    android:layout_marginTop="30dp"
+                    app:srcCompat="@drawable/ic_info_outline_black_24dp"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/waringText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="24dp"
+                    android:layout_marginTop="15dp"
+                    android:fontFamily="@font/sans"
+                    android:textColor="@color/ui_fg_secondary"
+                    tools:text="PlaceHolder" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/downloadButton"

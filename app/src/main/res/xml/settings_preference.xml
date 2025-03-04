@@ -10,6 +10,12 @@
             android:summary="@string/option_settings_item_folder_first_desc"
             android:defaultValue="true" />
 
+        <com.refoler.app.ui.utils.SwitchedPreference
+            android:key="listFinishOnBack"
+            android:title="@string/option_settings_item_finish_on_back_title"
+            android:summary="@string/option_settings_item_finish_on_back_desc"
+            android:defaultValue="false" />
+
         <ListPreference
             android:key="sortBy"
             android:title="@string/option_settings_item_sort_by_title"

@@ -2,8 +2,6 @@ package com.refoler.app.ui.holder;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 
@@ -11,19 +9,18 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.refoler.app.Applications;
 import com.refoler.app.R;
 
-import java.util.Objects;
-
 public abstract class SideFragment extends Fragment {
 
-    public AppCompatActivity mContext;
-    public SharedPreferences prefs;
+    protected AppCompatActivity mContext;
+    protected SharedPreferences prefs;
+    private boolean useParentToolbar = false;
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -49,16 +46,28 @@ public abstract class SideFragment extends Fragment {
         SideFragmentHolder.getInstance().popFragment(getContext());
     }
 
-    public void setToolbar(MaterialToolbar toolbar) {
-        setToolbar(toolbar, true);
+    public MaterialToolbar getToolbar(boolean useParentToolbar) {
+        this.useParentToolbar = useParentToolbar;
+        if(Applications.isLayoutTablet(mContext) || !useParentToolbar) {
+            return requireView().findViewById(R.id.toolbar);
+        } else {
+            return mContext.findViewById(R.id.toolbarParent);
+        }
     }
 
-    public void setToolbar(MaterialToolbar toolbar, boolean setBackground) {
+    public void setToolbar(MaterialToolbar toolbar) {
         toolbar.setNavigationOnClickListener((v) -> finishScreen());
-        if (setBackground && Applications.isLayoutTablet(mContext)) {
-            Drawable drawable = AppCompatResources.getDrawable(mContext, R.drawable.round_corner_toolbar);
-            Objects.requireNonNull(drawable).setColorFilter(mContext.getColor(R.color.ui_bg), PorterDuff.Mode.SRC_ATOP);
-            toolbar.setBackground(drawable);
+    }
+
+    public void setToolbar(MaterialToolbar toolbar, String toolbarTitle) {
+        toolbar.setNavigationOnClickListener((v) -> finishScreen());
+        toolbar.setTitle(toolbarTitle);
+    }
+
+    public void setToolbarBackground(View parent) {
+        if (Applications.isLayoutTablet(mContext)) {
+            parent.setBackgroundColor(ContextCompat.getColor(mContext, R.color.ui_bg));
+            getToolbar(useParentToolbar).setBackgroundColor(ContextCompat.getColor(mContext, R.color.ui_bg));
         }
     }
 
