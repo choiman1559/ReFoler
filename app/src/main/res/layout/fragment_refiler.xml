@@ -33,23 +33,41 @@
 
     <ImageButton
         android:id="@+id/refolerListRemoveAll"
-        android:layout_width="36dp"
+        android:layout_width="48dp"
         android:layout_height="?attr/actionBarSize"
         android:layout_gravity="center"
-        android:layout_marginEnd="6dp"
+        android:layout_marginEnd="2dp"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_fluent_delete_24_regular"
+        android:focusable="true"
+        android:clickable="true"
         app:layout_constraintEnd_toStartOf="@id/refolerListContext"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
-        android:id="@+id/refolerListContext"
-        android:layout_width="36dp"
+        android:id="@+id/refolerPathSpecifyApply"
+        android:layout_width="48dp"
         android:layout_height="?attr/actionBarSize"
         android:layout_gravity="center"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="4dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_fluent_checkmark_24_regular"
+        android:focusable="true"
+        android:clickable="true"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <ImageButton
+        android:id="@+id/refolerListContext"
+        android:layout_width="48dp"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_gravity="center"
+        android:layout_marginEnd="6dp"
         android:background="@android:color/transparent"
         android:src="@drawable/ic_more_vert_black_24dp"
+        android:focusable="true"
+        android:clickable="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

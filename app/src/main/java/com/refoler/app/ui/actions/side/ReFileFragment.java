@@ -1,13 +1,16 @@
 package com.refoler.app.ui.actions.side;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -23,9 +26,11 @@ import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.refoler.FileAction;
 import com.refoler.Refoler;
 import com.refoler.app.R;
 import com.refoler.app.backend.consts.PacketConst;
+import com.refoler.app.process.actions.FileActionRequester;
 import com.refoler.app.process.db.ReFileCache;
 import com.refoler.app.process.db.RemoteFile;
 import com.refoler.app.ui.PrefsKeyConst;
@@ -44,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class ReFileFragment extends SideFragment {
 
@@ -58,6 +64,10 @@ public class ReFileFragment extends SideFragment {
     RemoteFile findingTargetFile;
 
     boolean isSelectingMode = false;
+    boolean isPathSpecifyMode = false;
+    volatile RemoteFileHolder lastSelectedHolder = null;
+    volatile RemoteFileHolder selectedHolder = null;
+    ArrayList<RemoteFileHolder> selectedLists = new ArrayList<>();
     ArrayList<RemoteFileHolder> remoteFileLists = new ArrayList<>();
 
     MaterialToolbar toolbar;
@@ -68,6 +78,9 @@ public class ReFileFragment extends SideFragment {
     TextView remoteFileErrorEmoji;
     TextView remoteFileStateDescription;
     ProgressBar remoteFileStateProgress;
+    ImageButton refolerListRemoveAll;
+    ImageButton refolerListContext;
+    ImageButton refolerPathSpecifyApply;
 
     public ReFileFragment() {
         // Required for default Fragment constructor
@@ -92,7 +105,10 @@ public class ReFileFragment extends SideFragment {
         @Override
         public void handleOnBackPressed() {
             if (isSelectingMode) {
-                setSelectingMode(false);
+                setSelectingMode(false, false);
+                return;
+            } else if (finishOnBack && isPathSpecifyMode) {
+                setPathSpecifyMode(false, null, null);
                 return;
             }
 
@@ -139,12 +155,14 @@ public class ReFileFragment extends SideFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        getToolbar(false);
+        toolbar = getToolbar(false);
         setToolbarBackground(view);
-        toolbar.setTitle(device.getDeviceName());
+        onItemSelectionChanged(-1);
         toolbar.setNavigationOnClickListener((v) -> {
             if (isSelectingMode) {
-                setSelectingMode(false);
+                setSelectingMode(false, false);
+            } else if (isPathSpecifyMode) {
+                setPathSpecifyMode(false, null, null);
             } else {
                 finishScreen();
             }
@@ -163,6 +181,9 @@ public class ReFileFragment extends SideFragment {
         remoteFileErrorEmoji = view.findViewById(R.id.remoteFileErrorEmoji);
         remoteFileStateProgress = view.findViewById(R.id.remoteFileStateProgress);
         remoteFileStateDescription = view.findViewById(R.id.remoteFileStateDescription);
+        refolerListRemoveAll = view.findViewById(R.id.refolerListRemoveAll);
+        refolerListContext = view.findViewById(R.id.refolerListContext);
+        refolerPathSpecifyApply = view.findViewById(R.id.refolerPathSpecifyApply);
 
         remoteFileLayout.setVisibility(View.GONE);
         remoteFileErrorEmoji.setVisibility(View.GONE);
@@ -177,56 +198,235 @@ public class ReFileFragment extends SideFragment {
             }
         });
 
+        registerForContextMenu(refolerListContext);
+        refolerListRemoveAll.setVisibility(View.GONE);
+        refolerListRemoveAll.setOnClickListener((v) -> deleteSelectedFile());
+        refolerListContext.setVisibility(View.GONE);
+        refolerListContext.setOnClickListener((v) -> mContext.openContextMenu(refolerListContext));
         loadQueryFromDB(fetchDbOnFirstLoad);
     }
 
     @Override
-    public void onCreateContextMenu(@NonNull ContextMenu menu, @NonNull View v, @Nullable ContextMenu.ContextMenuInfo menuInfo) {
+    public synchronized void onCreateContextMenu(@NonNull ContextMenu menu, @NonNull View v, @Nullable ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        for (RemoteFileHolder holder : remoteFileLists) {
-            if (holder.remoteFileSelect.equals(v)) {
-                mContext.getMenuInflater().inflate(R.menu.menu_refoler_list_item, menu);
-                return;
-            }
-        }
-
         if (isSelectingMode) {
             mContext.getMenuInflater().inflate(R.menu.menu_refoler_title_selected, menu);
         } else {
-            mContext.getMenuInflater().inflate(R.menu.menu_refoler_title_normal, menu);
+            if (lastSelectedHolder == null) {
+                mContext.getMenuInflater().inflate(R.menu.menu_refoler_title_normal, menu);
+            } else {
+                mContext.getMenuInflater().inflate(R.menu.menu_refoler_list_item, menu);
+                selectedHolder = lastSelectedHolder;
+                lastSelectedHolder = null;
+            }
         }
     }
 
     @Override
-    public boolean onContextItemSelected(@NonNull MenuItem item) {
-        for (RemoteFileHolder holder : remoteFileLists) {
-            if (holder.remoteFileSelect.equals(item.getActionView())) {
-                int actionId = item.getItemId();
-                if (actionId == R.id.menu_select) {
-                    setSelectingMode(true);
-                    holder.setItemSelected(true);
-                } else if (actionId == R.id.menu_moveTo) {
+    public synchronized boolean onContextItemSelected(@NonNull MenuItem item) {
+        int actionId = item.getItemId();
+        selectedLists.clear();
 
-                } else if (actionId == R.id.menu_copyTo) {
-
-                } else if (actionId == R.id.menu_rename) {
-
+        if (isSelectingMode) {
+            if (actionId == R.id.menu_selectAll) {
+                for (RemoteFileHolder remoteFileHolder : remoteFileLists) {
+                    remoteFileHolder.setItemSelected(true);
                 }
-
-                holder.setItemSelected(!holder.isSelected());
-                break;
+                onItemSelectionChanged(remoteFileLists.size());
+            } else if (actionId == R.id.menu_moveTo) {
+                selectedLists.addAll(getSelectedHolders());
+                setPathSpecifyMode(true, getString(R.string.refoler_list_menu_move_to), FileAction.ActionType.OP_CUT);
+            } else if (actionId == R.id.menu_copyTo) {
+                selectedLists.addAll(getSelectedHolders());
+                setPathSpecifyMode(true, getString(R.string.refoler_list_menu_copy_to), FileAction.ActionType.OP_COPY);
+            }
+        } else if (selectedHolder == null) {
+            if (actionId == R.id.menu_selectAll) {
+                setSelectingMode(true, true);
+                for (RemoteFileHolder remoteFileHolder : remoteFileLists) {
+                    remoteFileHolder.setItemSelected(true);
+                }
+            } else if (actionId == R.id.menu_newFile) {
+                showMakeNewDialog(getString(R.string.refoler_list_menu_new_file), getString(R.string.refoler_list_menu_new_dialog_hint), FileAction.ActionType.OP_NEW_FILE);
+            } else if (actionId == R.id.menu_newFolder) {
+                showMakeNewDialog(getString(R.string.refoler_list_menu_new_folder), getString(R.string.refoler_list_menu_new_dialog_hint), FileAction.ActionType.OP_MAKE_DIR);
+            }
+        } else {
+            if (actionId == R.id.menu_select) {
+                setSelectingMode(true, false);
+                selectedHolder.setItemSelected(true);
+            } else if (actionId == R.id.menu_moveTo) {
+                selectedLists.add(selectedHolder);
+                setPathSpecifyMode(true, getString(R.string.refoler_list_menu_move_to), FileAction.ActionType.OP_CUT);
+            } else if (actionId == R.id.menu_copyTo) {
+                selectedLists.add(selectedHolder);
+                setPathSpecifyMode(true, getString(R.string.refoler_list_menu_copy_to), FileAction.ActionType.OP_COPY);
+            } else if (actionId == R.id.menu_rename) {
+                showEditNameDialog(selectedHolder);
             }
         }
+
+        selectedHolder = null;
         return super.onContextItemSelected(item);
     }
 
-    void setSelectingMode(boolean isSelectingMode) {
-        this.isSelectingMode = isSelectingMode;
-        this.toolbar.setNavigationIcon(ContextCompat.getDrawable(mContext,
-                isSelectingMode ? com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_dismiss_24_regular : R.drawable.back_btn_selector));
-        for (RemoteFileHolder holder : remoteFileLists) {
-            holder.setSelectMode(isSelectingMode);
+    private void postActionRequest(FileAction.ActionRequest.Builder actionRequest) {
+        try {
+            showProgress(getString(R.string.refoler_list_action_processing));
+            FileActionRequester.setChallengeCode(device, actionRequest);
+            FileActionRequester.getInstance().requestAction(mContext, device, actionRequest, (device, uploadResponse) -> mContext.runOnUiThread(() -> {
+                if (uploadResponse.getOverallStatus().equals(PacketConst.STATUS_OK)) {
+                    loadQueryFromDB(true);
+                } else {
+                    ToastHelper.show(mContext, getString(R.string.refoler_list_action_failed), ToastHelper.LENGTH_SHORT);
+                    loadQueryFromDB(false);
+                }
+            }));
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError(String.format(Locale.getDefault(), getString(R.string.refoler_list_action_failed_exception), e));
         }
+    }
+
+    private void deleteSelectedFile() {
+        selectedLists = getSelectedHolders();
+        setSelectingMode(false, true);
+        FileAction.ActionRequest.Builder actionRequest = FileAction.ActionRequest.newBuilder();
+        actionRequest.setActionType(FileAction.ActionType.OP_DELETE);
+        for (RemoteFileHolder holder : selectedLists) {
+            actionRequest.addTargetFiles(holder.remoteFile.getPath());
+        }
+        postActionRequest(actionRequest);
+    }
+
+    private boolean isRootPath() {
+        return lastRemoteFile.getPath().equals(allFileList.getPath());
+    }
+
+    private ArrayList<RemoteFileHolder> getSelectedHolders() {
+        ArrayList<RemoteFileHolder> remoteFileHolders = new ArrayList<>();
+        if (isSelectingMode) {
+            for (RemoteFileHolder holder : remoteFileLists) {
+                if (holder.isSelected()) remoteFileHolders.add(holder);
+            }
+        }
+        return remoteFileHolders;
+    }
+
+    void onItemSelectionChanged(int offset) {
+        if (isSelectingMode) {
+            int size = getSelectedHolders().size();
+            if (size == 0 && offset >= 0) {
+                size = offset;
+            }
+
+            toolbar.setTitle(String.format(Locale.getDefault(), mContext.getString(R.string.refoler_list_menu_item_count), size));
+        } else {
+            toolbar.setTitle(device.getDeviceName());
+        }
+    }
+
+    boolean isDestPathValid() {
+        for (RemoteFileHolder holder : selectedLists) {
+            RemoteFile remoteFile = holder.remoteFile;
+            if (lastRemoteFile.equals(remoteFile.getParent())) {
+                return false;
+            } else if (!remoteFile.isFile() && lastRemoteFile.isChildOf(remoteFile, true)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void showEditNameDialog(RemoteFileHolder selectedHolder) {
+        EditText editText = new EditText(mContext);
+        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        editText.setText(selectedHolder.remoteFile.getName());
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(mContext);
+        dialogBuilder.setView(editText);
+        dialogBuilder.setTitle(getString(R.string.refoler_list_menu_rename));
+
+        dialogBuilder.setPositiveButton(mContext.getString(R.string.default_string_okay), (dialog, which) -> {
+            String newFileName = editText.getText().toString();
+            FileAction.ActionRequest.Builder requestBuilder = FileAction.ActionRequest.newBuilder();
+            requestBuilder.setActionType(FileAction.ActionType.OP_RENAME);
+            requestBuilder.addTargetFiles(selectedHolder.remoteFile.getPath());
+            requestBuilder.setDestDir(selectedHolder.remoteFile.getParent().getPath() + "/" + newFileName);
+            postActionRequest(requestBuilder);
+        });
+        dialogBuilder.setNegativeButton(mContext.getString(R.string.default_string_cancel), (dialog, which) -> dialog.cancel());
+        dialogBuilder.create().show();
+    }
+
+    void showMakeNewDialog(String title, String hint, FileAction.ActionType actionType) {
+        EditText editText = new EditText(mContext);
+        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        editText.setHint(hint);
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(mContext);
+        dialogBuilder.setView(editText);
+        dialogBuilder.setTitle(title);
+
+        dialogBuilder.setPositiveButton(mContext.getString(R.string.default_string_okay), (dialog, which) -> {
+            String newFileName = editText.getText().toString();
+            FileAction.ActionRequest.Builder requestBuilder = FileAction.ActionRequest.newBuilder();
+            requestBuilder.setActionType(actionType);
+            requestBuilder.addTargetFiles(lastRemoteFile.getPath() + "/" + newFileName.trim().replace("/", ""));
+            postActionRequest(requestBuilder);
+        });
+        dialogBuilder.setNegativeButton(mContext.getString(R.string.default_string_cancel), (dialog, which) -> dialog.cancel());
+        dialogBuilder.create().show();
+    }
+
+    void setPathSpecifyMode(boolean isPathSpecifyMode, @Nullable String toolbarTitle, @Nullable FileAction.ActionType actionType) {
+        this.isPathSpecifyMode = isPathSpecifyMode;
+        remoteFileRefreshLayout.setEnabled(!isSelectingMode);
+        setSelectingMode(false, true);
+
+        refolerListContext.setVisibility(isPathSpecifyMode ? View.GONE : View.VISIBLE);
+        for (RemoteFileHolder holder : remoteFileLists) {
+            holder.remoteFileDetail.setVisibility(isPathSpecifyMode ? View.GONE : View.VISIBLE);
+        }
+
+        refolerPathSpecifyApply.setVisibility(isPathSpecifyMode ? View.VISIBLE : View.GONE);
+        toolbar.setTitle(Objects.requireNonNullElseGet(toolbarTitle, () -> device.getDeviceName()));
+        toolbar.setNavigationIcon(ContextCompat.getDrawable(mContext,
+                isPathSpecifyMode ? com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_dismiss_24_regular : R.drawable.back_btn_selector));
+
+        if (isPathSpecifyMode && actionType != null) {
+            refolerPathSpecifyApply.setOnClickListener((v) -> {
+                setPathSpecifyMode(false, toolbarTitle, null);
+                FileAction.ActionRequest.Builder actionRequest = FileAction.ActionRequest.newBuilder();
+                actionRequest.setActionType(actionType);
+                actionRequest.setDestDir(lastRemoteFile.getPath());
+                for (RemoteFileHolder holder : selectedLists) {
+                    actionRequest.addTargetFiles(holder.remoteFile.getPath());
+                }
+                postActionRequest(actionRequest);
+            });
+        }
+    }
+
+    void setSelectingMode(boolean isSelectingMode, boolean selectAll) {
+        this.isSelectingMode = isSelectingMode;
+        remoteFileRefreshLayout.setEnabled(!isSelectingMode);
+        refolerListRemoveAll.setVisibility(isSelectingMode ? View.VISIBLE : View.GONE);
+
+        if (!isSelectingMode) {
+            for (RemoteFileHolder holder : remoteFileLists) {
+                holder.setItemSelected(false);
+                holder.setSelectMode(false);
+            }
+        } else {
+            for (RemoteFileHolder holder : remoteFileLists) {
+                holder.setSelectMode(true);
+            }
+        }
+
+        onItemSelectionChanged(selectAll ? remoteFileLists.size() : 1);
+        toolbar.setNavigationIcon(ContextCompat.getDrawable(mContext,
+                isSelectingMode ? com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_dismiss_24_regular : R.drawable.back_btn_selector));
     }
 
     void loadQueryFromDB(boolean renewCache) {
@@ -342,20 +542,32 @@ public class ReFileFragment extends SideFragment {
         String orderByValue = prefs.getString(PrefsKeyConst.PREFS_KEY_FILE_LIST_VIEW_SORT_BY, getString(R.string.option_settings_value_order_by_name_az));
 
         if (lastRemoteFile == null) lastRemoteFile = allFileList;
-        if (!lastRemoteFile.getPath().equals(allFileList.getPath())) {
-            RelativeLayout goParentLayout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
-            new RemoteFileHolder(mContext, orderByValue, null, goParentLayout, true, false);
-            goParentLayout.setOnClickListener(v -> {
-                lastRemoteFile = lastRemoteFile.getParent();
-                loadFileListLayout();
-            });
+        boolean isRootPath = isRootPath();
 
+        if (!isRootPath) {
+            if (!isPathSpecifyMode) {
+                refolerListContext.setVisibility(View.VISIBLE);
+            } else {
+                refolerPathSpecifyApply.setEnabled(isDestPathValid());
+            }
+
+            RelativeLayout goParentLayout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
+            new RemoteFileHolder(mContext, ReFileFragment.this, orderByValue, null, goParentLayout, true, false, false);
+            goParentLayout.setOnClickListener(v -> {
+                if (!isSelectingMode) {
+                    lastRemoteFile = lastRemoteFile.getParent();
+                    loadFileListLayout();
+                }
+            });
             remoteFileLayout.addView(goParentLayout);
+        } else {
+            refolerListContext.setVisibility(View.GONE);
+            refolerPathSpecifyApply.setEnabled(false);
         }
 
         if (lastRemoteFile.isIndexSkipped()) {
             RelativeLayout skippedLayout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
-            new RemoteFileHolder(mContext, orderByValue, lastRemoteFile, skippedLayout, false, true);
+            new RemoteFileHolder(mContext, ReFileFragment.this, orderByValue, lastRemoteFile, skippedLayout, false, true, isRootPath);
             remoteFileLayout.addView(skippedLayout);
         } else {
             remoteFileLists.clear();
@@ -364,11 +576,21 @@ public class ReFileFragment extends SideFragment {
 
             for (RemoteFile file : lastRemoteFile.getList()) {
                 RelativeLayout layout = (RelativeLayout) View.inflate(mContext, R.layout.cardview_refile_item, null);
-                RemoteFileHolder holder = new RemoteFileHolder(mContext, orderByValue, file, layout, false, false);
+                RemoteFileHolder holder = new RemoteFileHolder(mContext, ReFileFragment.this, orderByValue, file, layout, false, false, isRootPath);
+
+                layout.setOnLongClickListener(v -> {
+                    if (!isRootPath && !isSelectingMode) {
+                        setSelectingMode(true, false);
+                        holder.setItemSelected(true);
+                        return true;
+                    }
+                    return false;
+                });
 
                 layout.setOnClickListener(v -> {
                     if (isSelectingMode) {
                         holder.setItemSelected(!holder.isSelected());
+                        onItemSelectionChanged(-1);
                     } else {
                         if (file.isFile()) {
                             SideFragmentHolder.getInstance().pushFragment(mContext, true, new FileDetailFragment(device, file, holder.remoteFileIconId));
@@ -377,6 +599,15 @@ public class ReFileFragment extends SideFragment {
                             loadFileListLayout();
                         }
                     }
+                });
+
+                if (isPathSpecifyMode) {
+                    holder.remoteFileDetail.setVisibility(View.GONE);
+                }
+
+                holder.remoteFileDetail.setOnClickListener((v) -> {
+                    lastSelectedHolder = holder;
+                    mContext.openContextMenu(holder.remoteFileDetail);
                 });
 
                 if (!listFolderFirst || holder.remoteFile.isFile()) {
@@ -429,6 +660,9 @@ public class ReFileFragment extends SideFragment {
     }
 
     void setFileListVisibility(boolean visible) {
+        if (!visible) {
+            refolerListContext.setVisibility(View.GONE);
+        }
         remoteFileLayout.setVisibility(visible ? View.VISIBLE : View.GONE);
         remoteFileStateLayout.setVisibility(visible ? View.GONE : View.VISIBLE);
         remoteFileStateProgress.setVisibility(visible ? View.GONE : View.VISIBLE);
@@ -448,7 +682,8 @@ public class ReFileFragment extends SideFragment {
         TextView remoteFileDescription;
         AppCompatCheckBox remoteFileSelect;
 
-        public RemoteFileHolder(Activity context, String orderByValue, RemoteFile remoteFile, View view, boolean isGoingParentButton, boolean isSkipped) {
+        public RemoteFileHolder(Activity context, SideFragment fragment, String orderByValue, RemoteFile remoteFile, View view,
+                                boolean isGoingParentButton, boolean isSkipped, boolean isRootPath) {
             this.context = context;
             this.orderByValue = orderByValue;
             this.parentView = view;
@@ -470,17 +705,10 @@ public class ReFileFragment extends SideFragment {
                 remoteFileDescription.setText(context.getString(R.string.refoler_list_item_parent));
                 remoteFileIcon.setImageResource(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_folder_24_filled);
             } else {
-                if (remoteFile.getParent() == null) {
+                if (isRootPath) {
                     remoteFileDetail.setVisibility(View.GONE);
                 }
-
-                context.registerForContextMenu(view);
-                remoteFileSelect.setOnClickListener((v) -> {
-                });
-
-                remoteFileDetail.setOnClickListener((v) -> {
-
-                });
+                fragment.registerForContextMenu(remoteFileDetail);
 
                 String description = new SimpleDateFormat(context.getString(R.string.default_date_format), Locale.getDefault()).format(remoteFile.getLastModified());
                 if (remoteFile.isFile()) {

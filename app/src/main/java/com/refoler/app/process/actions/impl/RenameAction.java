@@ -71,6 +71,7 @@ public class RenameAction implements ActionOp {
 
         actionResponse.addResult(result);
         editTask.addQuery(targetPath);
+        editTask.addQuery(originPath);
         editTask.execute(context);
     }
 

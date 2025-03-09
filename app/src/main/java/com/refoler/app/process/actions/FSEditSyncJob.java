@@ -182,6 +182,7 @@ public class FSEditSyncJob {
                     for (TaskResultCallBack callBack : taskResultCallBacks) {
                         callBack.onUploadSuccess();
                     }
+                    taskResultCallBacks.clear();
                 });
             }
         } catch (Throwable e) {
@@ -192,8 +193,8 @@ public class FSEditSyncJob {
             for (TaskResultCallBack callBack : taskResultCallBacks) {
                 callBack.onUploadFailed(e);
             }
-        } finally {
             taskResultCallBacks.clear();
+        } finally {
             queries.clear();
         }
     }
@@ -233,7 +234,7 @@ public class FSEditSyncJob {
 
         for (Iterator<String> keys = entireFsListData.keys(); keys.hasNext(); ) {
             String key = keys.next();
-            if (!RemoteFile.isKeyMetadata(key)) {
+            if (RemoteFile.isKeyNotMetadata(key)) {
                 rootPathKeyList.add(key);
             }
         }

@@ -10,6 +10,7 @@ enum DeviceType {
   DEVICE_TYPE_WEB = 2;
   DEVICE_TYPE_IOS = 3;
   DEVICE_TYPE_CLI = 4;
+  DEVICE_TYPE_AGENT = 5;
 }
 
 enum DeviceFormfactor {

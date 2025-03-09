@@ -78,13 +78,19 @@
     <string name="refoler_list_info_not_indexed_desc">Indexing was skipped because\nthe folder had too much content</string>
     <string name="refoler_list_item_parent">Parent folder</string>
     <string name="refoler_list_item_internal_storage">Internal Storage</string>
+    <string name="refoler_list_action_processing">Requesting file action…</string>
+    <string name="refoler_list_action_succeed">File action completed!</string>
+    <string name="refoler_list_action_failed">File action failed</string>
+    <string name="refoler_list_action_failed_exception">File action failed:\n %s</string>
 
+    <string name="refoler_list_menu_item_count">%d item(s) selected</string>
     <string name="refoler_list_menu_select">Select</string>
     <string name="refoler_list_menu_select_all">Select All</string>
     <string name="refoler_list_menu_move_to">Move To…</string>
     <string name="refoler_list_menu_copy_to">Copy To…</string>
     <string name="refoler_list_menu_new_folder">New Folder</string>
     <string name="refoler_list_menu_new_file">New File</string>
+    <string name="refoler_list_menu_new_dialog_hint">Name of content to make new</string>
     <string name="refoler_list_menu_rename">Rename</string>
     <string name="refoler_list_menu_delete_title">Delete</string>
     <string name="refoler_list_menu_delete_confirm">Are you sure to delete?\nThis operation cannot be undone.</string>

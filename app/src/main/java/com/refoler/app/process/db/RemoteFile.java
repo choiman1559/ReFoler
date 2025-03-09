@@ -7,10 +7,15 @@ import org.json.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
 public class RemoteFile implements Comparable<RemoteFile>, Serializable {
+
+    private static final HashSet<String> metaKeys = new HashSet<>();
+    private static final String FILE_PATH_SEPARATOR = "/";
+
     long size;
     long lastModified;
     boolean isFile;
@@ -18,7 +23,7 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
     int permission;
     String path;
     RemoteFile parent;
-    List<RemoteFile> list;
+    transient List<RemoteFile> list;
 
     public RemoteFile(JSONObject jsonObject) throws JSONException {
         path = "";
@@ -59,9 +64,9 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
             if (!singleObj) {
                 for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
                     String key = it.next();
-                    if (!isKeyMetadata(key)) {
+                    if (isKeyNotMetadata(key)) {
                         Object obj = jsonObject.get(key);
-                        list.add(new RemoteFile(this, (JSONObject) obj, basePath + "/" + key, false));
+                        list.add(new RemoteFile(this, (JSONObject) obj, basePath + FILE_PATH_SEPARATOR + key, false));
                     }
                 }
             }
@@ -97,7 +102,7 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
     }
 
     public String getName() {
-        String[] pathArrays = path.split("/");
+        String[] pathArrays = path.split(FILE_PATH_SEPARATOR);
         return pathArrays[pathArrays.length - 1];
     }
 
@@ -131,20 +136,31 @@ public class RemoteFile implements Comparable<RemoteFile>, Serializable {
         return (obj instanceof RemoteFile) && ((RemoteFile) obj).getPath().equals(this.getPath());
     }
 
+    public boolean isChildOf(RemoteFile parent, boolean recursive) {
+        if(recursive) {
+            return (this.getPath() + FILE_PATH_SEPARATOR).startsWith(parent.getPath() + FILE_PATH_SEPARATOR);
+        } else if(getParent() != null) {
+            return this.getParent().equals(parent);
+        } else {
+            return getPath().replace(getName(), "").equals(parent.getPath() + FILE_PATH_SEPARATOR);
+        }
+    }
+
     public RemoteFile getSerializeOptimized() {
         RemoteFile tmp = this;
-        list = new ArrayList<>();
+        list.clear();
         parent = null;
         return tmp;
     }
 
-    public static boolean isKeyMetadata(String key) {
-        ArrayList<String> metaKeys = new ArrayList<>();
-        metaKeys.add(ReFileConst.DATA_TYPE_IS_FILE);
-        metaKeys.add(ReFileConst.DATA_TYPE_LAST_MODIFIED);
-        metaKeys.add(ReFileConst.DATA_TYPE_IS_SKIPPED);
-        metaKeys.add(ReFileConst.DATA_TYPE_SIZE);
-        metaKeys.add(ReFileConst.DATA_TYPE_PERMISSION);
-        return metaKeys.contains(key);
+    public static boolean isKeyNotMetadata(String key) {
+        if(metaKeys.isEmpty()) {
+            metaKeys.add(ReFileConst.DATA_TYPE_IS_FILE);
+            metaKeys.add(ReFileConst.DATA_TYPE_LAST_MODIFIED);
+            metaKeys.add(ReFileConst.DATA_TYPE_IS_SKIPPED);
+            metaKeys.add(ReFileConst.DATA_TYPE_SIZE);
+            metaKeys.add(ReFileConst.DATA_TYPE_PERMISSION);
+        }
+        return !metaKeys.contains(key);
     }
 }
