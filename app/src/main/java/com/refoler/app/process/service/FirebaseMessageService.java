@@ -79,7 +79,7 @@ public class FirebaseMessageService extends FirebaseMessagingService {
 
             checkFcmTarget : if(jsonObject.getString(EndPointConst.FCM_KEY_SENT_DEVICE).equals(selfInfo.getDeviceId())) {
                 return;
-            } else {
+            } else if(!jsonObject.getBoolean(EndPointConst.FCM_KEY_IS_AGENT)) {
                 JSONArray jsonArray = jsonObject.getJSONArray(EndPointConst.FCM_KEY_LIST_TARGETS);
                 for(int i = 0; i < jsonArray.length(); i += 1) {
                     if(selfInfo.getDeviceId().equals(jsonArray.getString(i))) {

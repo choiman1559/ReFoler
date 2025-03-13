@@ -21,6 +21,7 @@ import com.refoler.app.process.actions.impl.RenameAction;
 import com.refoler.app.process.actions.impl.misc.DownloadAction;
 import com.refoler.app.process.actions.impl.misc.HashAction;
 import com.refoler.app.process.actions.impl.misc.NopAction;
+import com.refoler.app.process.actions.impl.socket.RandAccessAction;
 import com.refoler.app.process.actions.impl.misc.UploadAction;
 import com.refoler.app.process.db.ReFileConst;
 import com.refoler.app.process.service.FirebaseMessageService;
@@ -68,6 +69,7 @@ public class FileActionWorker {
             instance.addActionOp(HashAction.class);
             instance.addActionOp(UploadAction.class);
             instance.addActionOp(DownloadAction.class);
+            instance.addActionOp(RandAccessAction.class);
 
             // File action implementations
             instance.addActionOp(CopyAction.class);

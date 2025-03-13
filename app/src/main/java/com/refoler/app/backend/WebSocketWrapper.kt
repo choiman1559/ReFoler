@@ -4,7 +4,6 @@ import android.content.Context
 import com.refoler.Refoler.RequestPacket
 import com.refoler.app.Applications
 import com.refoler.app.backend.consts.PacketConst
-import com.refoler.app.ui.PrefsKeyConst
 import com.refoler.app.utils.JsonRequest
 import com.refoler.app.utils.JsonRequest.Companion.getGoogleOAuthAccessToken
 import io.ktor.client.HttpClient
@@ -17,17 +16,20 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.headers
 import io.ktor.websocket.close
 import io.ktor.websocket.send
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 
 @Suppress("PrivatePropertyName")
 class WebSocketWrapper(private val context: Context) {
+
     private val PING_INTERVAL: Long = 20_000
     private lateinit var onDataReceiveListener: OnDataReceiveListener
     private lateinit var clientSession: DefaultClientWebSocketSession
 
-    interface OnDataReceiveListener {
-        fun onConnect()
-        fun onReceive(data: String)
+    abstract class OnDataReceiveListener {
+        open fun onConnect() {}
+        open fun onReceiveString(data: String) {}
+        open fun onReceiveByteArray(data: ByteArray) {}
     }
 
     fun setOnDataReceiveListener(listener: OnDataReceiveListener) {
@@ -46,7 +48,13 @@ class WebSocketWrapper(private val context: Context) {
         )
     }
 
-    private fun postRequest(data: String) {
+    fun postRequest(data: String) {
+        runBlocking {
+            clientSession.send(data)
+        }
+    }
+
+    fun postRequest(data: ByteArray) {
         runBlocking {
             clientSession.send(data)
         }
@@ -54,7 +62,9 @@ class WebSocketWrapper(private val context: Context) {
 
     fun disconnect() {
         runBlocking {
-            clientSession.close()
+            if (clientSession.isActive) {
+                clientSession.close()
+            }
         }
     }
 
@@ -71,7 +81,7 @@ class WebSocketWrapper(private val context: Context) {
                 }
             }
 
-            client.webSocket (
+            client.webSocket(
                 method = HttpMethod.Get,
                 host = PacketConst.API_HOST_ADDRESS_WS,
                 port = PacketConst.API_HOST_PORT_WS,
@@ -81,7 +91,8 @@ class WebSocketWrapper(private val context: Context) {
                 onDataReceiveListener.onConnect()
 
                 for (received in clientSession.incoming) {
-                    onDataReceiveListener.onReceive(String(received.data))
+                    onDataReceiveListener.onReceiveByteArray(received.data)
+                    onDataReceiveListener.onReceiveString(String(received.data))
                 }
             }
         }

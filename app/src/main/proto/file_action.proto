@@ -16,8 +16,8 @@ enum ActionType {       // PARAMS                                             Ef
   // Network Related Ops
   OP_UPLOAD = 10;       // USE: targets, scope                                false
   OP_DOWNLOAD = 11;     // USE: targets (server)                              true
-  OP_READ_PART = 12;    // USE: dest -> [buffer size, start byte, end byte]   false
-  OP_WRITE_PART = 13;   // USE: dest -> [buffer size, start byte, end byte]   true
+  OP_ACCESS_PART = 12;  // USE: dest                                          false
+  OP_CHANGE_PERM = 13;  // USE: targets, scope -> dest (unix chmod)           false
 }
 
 message ActionRequest {

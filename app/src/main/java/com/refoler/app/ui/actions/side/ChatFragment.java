@@ -188,7 +188,7 @@ public class ChatFragment extends SideFragment {
             }
 
             @Override
-            public void onReceive(@NonNull String data) {
+            public void onReceiveString(@NonNull String data) {
                 switch (data) {
                     case LlmConst.RAW_DATA_END_OF_CONVERSATION -> {
                         chat.status = ChatDatabase.STATUS_COMPLETE;
