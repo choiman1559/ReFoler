@@ -1,6 +1,7 @@
 package com.refoler.app.process.actions.impl.socket;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -15,8 +16,9 @@ import com.refoler.app.process.actions.FileActionRequester;
 
 import java.io.Closeable;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-@SuppressWarnings("unused")
+@SuppressWarnings("unused, UnusedReturnValue")
 public final class SocketRandAccess extends SocketAction implements Closeable {
 
     private static final String LogTAG = "SocketRandAccess";
@@ -44,7 +46,7 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
     private final boolean isRead;
     private final boolean isWrite;
 
-    private boolean isConnected = false;
+    private final AtomicBoolean isConnected = new AtomicBoolean(false);
     private boolean isSynchronized = false;
     private WebSocketWrapper webSocketWrapper;
     private BufferReceivedListener bufferReceivedListener;
@@ -67,7 +69,7 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
     }
 
     public boolean isConnected() {
-        return isConnected;
+        return isConnected.get();
     }
 
     public boolean requestChannel(Context context) {
@@ -78,18 +80,28 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
         actionRequest.addTargetFiles(String.valueOf(isWrite));
         FileActionRequester.setChallengeCode(device, actionRequest);
 
+        Log.d("ddd", "ddd1");
         DeAsyncJob<Boolean> booleanDeAsyncJob = new DeAsyncJob<>((job) -> {
             try {
+                Log.d("ddd", "ddd2");
                 FileActionRequester.getInstance().requestAction(context, device, actionRequest, (device, response) -> {
                     try {
+                        Log.d("ddd", "ddd3");
                         setSocketActionCode(response.getResult(0).getExtraData(0));
                         if (!response.getOverallStatus().equals(PacketConst.STATUS_OK)) {
                             job.setResult(false);
                             return;
                         }
 
-                        performActionOp(context, device, actionRequest.build(),
-                                (actionResponse) -> job.setResult(response.getOverallStatus().equals(PacketConst.STATUS_OK)));
+                        Log.d("ddd", "ddd4");
+                        performActionOp(context, this.device, actionRequest.build(), (actionResponse) -> {
+                            Log.d("ddd", "ddd5");
+                            if (response.getOverallStatus().equals(PacketConst.STATUS_OK)) {
+                                job.setResult(true);
+                            } else {
+                                job.setResult(false);
+                            }
+                        });
                     } catch (Exception e) {
                         job.setResult(false);
                         e.printStackTrace();
@@ -101,30 +113,76 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
             }
         });
 
-        return booleanDeAsyncJob.runAndWait();
+        final boolean booleanDeAsyncJobResult = booleanDeAsyncJob.runAndWait();
+        if (!isSynchronized || !booleanDeAsyncJobResult) return booleanDeAsyncJobResult;
+
+        Log.d("ddd", "ddd6");
+        DeAsyncJob<Boolean> ackWaitingJob = new DeAsyncJob<>((job) -> {
+            Log.d("ddd", "ddd7: " + isConnected.get() + " socket: " + (webSocketWrapper == null));
+            if (isConnected.get()) job.setResult(true);
+            else synchronizedResult = result -> {
+                Log.d("ddd", "ddd7_1: " + isConnected.get() + " socket: " + (webSocketWrapper == null));
+                job.setResult(true);
+            };
+        });
+        Log.d("ddd", "ddd8");
+        boolean ackWaitingResult = ackWaitingJob.runAndWait();
+        Log.d("ddd", "ddd9 : " + ackWaitingResult + " socket: " + (webSocketWrapper == null));
+        return ackWaitingResult;
     }
 
     public void setBufferReceivedListener(BufferReceivedListener listener) {
         this.bufferReceivedListener = listener;
     }
 
-    public void readBytes(int buffer_size, int offset, int length) {
+    public int readBytes(byte[] buffer, int offset, int length) {
+        DeAsyncJob<Integer> readByteJob = new DeAsyncJob<>((job) -> {
+            setBufferReceivedListener((result, bufferData) -> {
+                System.arraycopy(bufferData, 0, buffer, 0, result);
+                job.setResult(result);
+            });
+            readBytes(buffer.length, offset, length, false);
+        });
+        return readByteJob.runAndWait();
+    }
+
+    public void readBytes(int buffer_size, int offset, int length, boolean isContinues) {
         if (buffer_size <= 0) buffer_size = BUFFER_SIZE;
         webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
                 .setType(FileSocket.ProcedureType.FUNC_READ_BYTES)
                 .addParameterData(ByteString.copyFrom(ByteTypeUtils.toBytes(buffer_size)))
                 .addParameterData(ByteString.copyFrom(ByteTypeUtils.toBytes(offset)))
                 .addParameterData(ByteString.copyFrom(ByteTypeUtils.toBytes(length)))
+                .addParameterData(ByteString.copyFrom(ByteTypeUtils.toBytes(isContinues)))
                 .build().toByteArray());
     }
 
     public void writeBytes(byte[] buffer, int offset, int length) {
         DeAsyncJob<Object> voidDeAsyncJob = new DeAsyncJob<>((job) -> {
             webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
-                    .setType(FileSocket.ProcedureType.FUNC_READ_BYTES)
+                    .setType(FileSocket.ProcedureType.FUNC_WRITE_BYTES)
                     .addParameterData(ByteString.copyFrom(buffer))
                     .addParameterData(ByteString.copyFrom(ByteTypeUtils.toBytes(offset)))
                     .addParameterData(ByteString.copyFrom(ByteTypeUtils.toBytes(length)))
+                    .build().toByteArray());
+
+            if (isSynchronized) {
+                synchronizedResult = result -> job.setResult(new Object());
+            } else {
+                synchronizedResult = null;
+                job.setResult(new Object());
+            }
+        });
+
+        voidDeAsyncJob.runAndWait();
+        synchronizedResult = null;
+    }
+
+    public void seek(long position) {
+        DeAsyncJob<Object> voidDeAsyncJob = new DeAsyncJob<>((job) -> {
+            webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
+                    .setType(FileSocket.ProcedureType.FUNC_SEEK)
+                    .addParameterData(ByteString.copyFrom(ByteTypeUtils.toBytes(position)))
                     .build().toByteArray());
 
             if (isSynchronized) {
@@ -143,7 +201,7 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
         DeAsyncJob<Long> voidDeAsyncJob = new DeAsyncJob<>((job) -> {
             synchronizedResult = result -> job.setResult((Long) Objects.requireNonNullElse(result, -1L));
             webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
-                    .setType(FileSocket.ProcedureType.FUNC_SET_FILE_LENGTH)
+                    .setType(FileSocket.ProcedureType.FUNC_GET_FILE_LENGTH)
                     .build().toByteArray());
         });
 
@@ -171,6 +229,7 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
 
     @Override
     public void close() {
+        if (!isConnected.get()) return;
         DeAsyncJob<Object> voidDeAsyncJob = new DeAsyncJob<>((job) -> {
             webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
                     .setType(FileSocket.ProcedureType.FUNC_CLOSE)
@@ -192,13 +251,15 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
     @Override
     public void onConnected(WebSocketWrapper webSocketWrapper) {
         super.onConnected(webSocketWrapper);
+        Log.d("ddd", "Connected!");
         this.webSocketWrapper = webSocketWrapper;
     }
 
     @Override
     public void onDisconnected() {
         super.onDisconnected();
-        isConnected = false;
+        isConnected.set(false);
+        webSocketWrapper = null;
     }
 
     @Override
@@ -208,7 +269,14 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
 
         if (procedure.hasControl()) {
             switch (procedure.getControl()) {
-                case CTRL_ACK -> isConnected = true;
+                case CTRL_ACK -> {
+                    Log.d("ddd", "ddd_acked");
+                    isConnected.set(true);
+                    if (isSynchronized && synchronizedResult != null) {
+                        (synchronizedResult).onResult(null);
+                    }
+                }
+
                 case CTRL_ERROR -> {
                     if (errorReceivedListener != null) {
                         errorReceivedListener.onError(new IllegalStateException(new String(procedure.getReturnData(0).toByteArray())));
@@ -216,7 +284,7 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
                 }
 
                 case CTRL_CLOSE -> {
-                    if (isConnected) onDisconnected();
+                    if (isConnected.get()) onDisconnected();
                     if (isSynchronized && synchronizedResult != null) {
                         (synchronizedResult).onResult(null);
                     }
@@ -227,11 +295,11 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
                 if (bufferReceivedListener != null) {
                     bufferReceivedListener.onReceived(
                             ByteTypeUtils.toInt(procedure.getReturnData(0).toByteArray()),
-                            procedure.getReturnData(0).toByteArray());
+                            procedure.getReturnData(1).toByteArray());
                 }
             }
 
-            case FUNC_WRITE_BYTES, FUNC_SET_FILE_LENGTH -> {
+            case FUNC_WRITE_BYTES, FUNC_SET_FILE_LENGTH, FUNC_SEEK -> {
                 if (isSynchronized && synchronizedResult != null) {
                     (synchronizedResult).onResult(null);
                 }

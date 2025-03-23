@@ -1,12 +1,14 @@
 package com.refoler.app.process.actions;
 
+import android.os.Build;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 public class DeAsyncJob<T> {
-    AsyncRunnable<T> runnable;
-    AtomicReference<T> resultAtomic;
+    private final AsyncRunnable<T> runnable;
+    private final AtomicReference<T> resultAtomic;
     private final Object lock = new Object();
 
     public interface AsyncRunnable<T> {
@@ -26,7 +28,9 @@ public class DeAsyncJob<T> {
                 try {
                     lock.wait();
                 } catch (InterruptedException e) {
-                    Thread.onSpinWait();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Thread.onSpinWait();
+                    }
                 }
             }
         }

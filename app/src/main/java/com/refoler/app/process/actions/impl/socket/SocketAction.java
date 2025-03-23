@@ -80,6 +80,7 @@ public abstract class SocketAction implements ActionOp {
 
     private void processPacket(byte[] data) throws Exception {
         if(isControlPacket(data)) {
+            Log.d("ddd", "control receiving: " + new String(data));
             String controlString = new String(data);
             if(controlString.startsWith(parseControlCode(EndPointConst.FILE_PART_CONTROL_PEER_ACK))) {
                 Log.d(LogTAG, "Socket Peer established! Start communicating...");

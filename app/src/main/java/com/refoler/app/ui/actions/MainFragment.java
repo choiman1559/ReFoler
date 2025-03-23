@@ -30,7 +30,6 @@ import com.refoler.app.R;
 import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.consts.RecordConst;
 import com.refoler.app.process.SyncFileListProcess;
-import com.refoler.app.process.actions.FSEditSyncJob;
 import com.refoler.app.process.service.SyncFileListService;
 import com.refoler.app.ui.PrefsKeyConst;
 import com.refoler.app.ui.actions.side.ChatFragment;

@@ -16,7 +16,10 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.headers
 import io.ktor.websocket.close
 import io.ktor.websocket.send
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 @Suppress("PrivatePropertyName")
@@ -84,14 +87,15 @@ class WebSocketWrapper(private val context: Context) {
             client.webSocket(
                 method = HttpMethod.Get,
                 host = PacketConst.API_HOST_ADDRESS_WS,
-                port = PacketConst.API_HOST_PORT_WS,
                 path = JsonRequest.buildPathUri(serviceType)
             ) {
                 clientSession = this
                 onDataReceiveListener.onConnect()
 
                 for (received in clientSession.incoming) {
-                    onDataReceiveListener.onReceiveByteArray(received.data)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        onDataReceiveListener.onReceiveByteArray(received.data)
+                    }
                     onDataReceiveListener.onReceiveString(String(received.data))
                 }
             }

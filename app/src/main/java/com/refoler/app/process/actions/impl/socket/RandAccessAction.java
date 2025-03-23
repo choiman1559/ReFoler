@@ -1,6 +1,7 @@
 package com.refoler.app.process.actions.impl.socket;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.protobuf.ByteString;
 import com.refoler.FileAction;
@@ -26,10 +27,10 @@ public class RandAccessAction extends SocketAction {
 
     @Override
     public void performActionOp(Context context, Refoler.Device requester, FileAction.ActionRequest actionRequest, FileActionWorker.ActionCallback callback) throws Exception {
-        super.performActionOp(context, requester, actionRequest, callback);
         targetFile = actionRequest.getDestDir();
         isRead = Boolean.parseBoolean(actionRequest.getTargetFiles(0));
         isWrite = Boolean.parseBoolean(actionRequest.getTargetFiles(1));
+        super.performActionOp(context, requester, actionRequest, callback);
     }
 
     @Override
@@ -44,6 +45,7 @@ public class RandAccessAction extends SocketAction {
             randomAccessFile = new RandomAccessFile(targetFile, accessMode);
             isInitialized.set(true);
 
+            Log.d("ddd","Sending ack");
             webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
                     .setType(FileSocket.ProcedureType.FUNC_CONTROL)
                     .setControl(FileSocket.ControlProcedure.CTRL_ACK)
@@ -84,6 +86,8 @@ public class RandAccessAction extends SocketAction {
         }
 
         FileSocket.Procedure fileSocket = FileSocket.Procedure.parseFrom(data);
+        //Log.d("ddd", "received: " + JsonFormat.printer().print(fileSocket));
+
         FileSocket.ProcedureType procedureType = fileSocket.getType();
         if (procedureType.equals(FileSocket.ProcedureType.FUNC_CONTROL) && fileSocket.hasControl()) {
             return;
@@ -99,44 +103,42 @@ public class RandAccessAction extends SocketAction {
                 final long fileLength = randomAccessFile.length();
 
                 int length = ByteTypeUtils.toInt(fileSocket.getParameterData(2).toByteArray());
+                boolean isContinuous = ByteTypeUtils.toBoolean(fileSocket.getParameterData(3).toByteArray());
+
                 if (length < 0) {
                     length = (int) fileLength;
                 }
 
                 try {
-                    int currentPoint = startOffset;
                     byte[] buffer = new byte[bufferSize];
-
-                    while (currentPoint < length
-                            && currentPoint + bufferSize < length
-                            && currentPoint + bufferSize < fileLength) {
-
-                        randomAccessFile.seek(currentPoint);
-                        int result = randomAccessFile.read(buffer);
-
-                        readData.addReturnData(ByteString.copyFrom(ByteTypeUtils.toBytes(result)));
+                    if (!isContinuous) {
+                        Log.d("ddd", String.format("readBytes= buffer: %d; start: %d; length: %d", bufferSize, startOffset, length));
+                        readData.clearReturnData();
+                        readData.addReturnData(ByteString.copyFrom(ByteTypeUtils.toBytes(randomAccessFile.read(buffer, startOffset, length))));
                         readData.addReturnData(ByteString.copyFrom(buffer));
                         webSocketWrapper.postRequest(readData.build().toByteArray());
-                        currentPoint += bufferSize;
-                        if (result < 0) {
-                            return;
-                        }
+                        return;
                     }
 
-                    if (currentPoint < length) {
-                        randomAccessFile.seek(currentPoint);
-                        buffer = new byte[length - currentPoint];
-                        int result = randomAccessFile.read(buffer);
+                    long remainingBytes = length;
+                    while (remainingBytes > 0) {
+                        final int lengthToRead = (int) Math.min(remainingBytes, buffer.length);
+                        if(lengthToRead != buffer.length) {
+                            buffer = new byte[lengthToRead];
+                        }
+                        final int readBytes = randomAccessFile.read(buffer, startOffset, lengthToRead);
 
-                        readData.addReturnData(ByteString.copyFrom(ByteTypeUtils.toBytes(result)));
+                        readData.clearReturnData();
+                        readData.addReturnData(ByteString.copyFrom(ByteTypeUtils.toBytes(lengthToRead)));
                         readData.addReturnData(ByteString.copyFrom(buffer));
                         webSocketWrapper.postRequest(readData.build().toByteArray());
-                        if (result < 0) {
-                            return;
-                        }
+
+                        Log.d("ddd", "Read: " + readBytes + ", Remaining: " + remainingBytes);
+                        remainingBytes -= readBytes;
                     }
 
                     webSocketWrapper.postRequest(readData
+                            .clearReturnData()
                             .addReturnData(ByteString.copyFrom(ByteTypeUtils.toBytes(-1)))
                             .addReturnData(ByteString.copyFrom(new byte[0]))
                             .build().toByteArray());
@@ -180,6 +182,14 @@ public class RandAccessAction extends SocketAction {
                 webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
                         .setType(FileSocket.ProcedureType.FUNC_CLOSE)
                         .setControl(FileSocket.ControlProcedure.CTRL_CLOSE)
+                        .build().toByteArray()
+                );
+            }
+
+            case FUNC_SEEK -> {
+                randomAccessFile.seek(ByteTypeUtils.toLong(fileSocket.getParameterData(0).toByteArray()));
+                webSocketWrapper.postRequest(FileSocket.Procedure.newBuilder()
+                        .setType(FileSocket.ProcedureType.FUNC_SEEK)
                         .build().toByteArray()
                 );
             }

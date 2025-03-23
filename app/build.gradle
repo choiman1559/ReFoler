@@ -95,8 +95,11 @@ dependencies {
     implementation libs.preference.ktx
 
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-beta01"
-    implementation "androidx.credentials:credentials:1.5.0-rc01"
-    implementation "androidx.credentials:credentials-play-services-auth:1.5.0-rc01"
+    implementation "androidx.credentials:credentials:1.5.0"
+    implementation "androidx.credentials:credentials-play-services-auth:1.5.0"
+    implementation "androidx.media3:media3-exoplayer:1.5.1"
+    implementation "androidx.media3:media3-ui:1.5.1"
+    implementation "androidx.media3:media3-common:1.5.1"
     implementation "androidx.room:room-runtime:2.6.1"
     ksp "androidx.room:room-compiler:2.6.1"
 

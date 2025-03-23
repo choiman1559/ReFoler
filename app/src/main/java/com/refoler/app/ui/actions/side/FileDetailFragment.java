@@ -14,24 +14,31 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.media3.common.util.UnstableApi;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.refoler.FileAction;
 import com.refoler.Refoler;
 import com.refoler.app.Applications;
+import com.refoler.app.BuildConfig;
 import com.refoler.app.R;
 import com.refoler.app.backend.DeviceWrapper;
 import com.refoler.app.backend.consts.DirectActionConst;
 import com.refoler.app.process.actions.FileActionRequester;
 import com.refoler.app.process.actions.impl.misc.DownloadAction;
 import com.refoler.app.process.actions.impl.misc.HashAction;
+import com.refoler.app.process.actions.impl.socket.SocketDownloadAction;
 import com.refoler.app.process.db.RemoteFile;
+import com.refoler.app.ui.actions.side.stream.StreamFragment;
 import com.refoler.app.ui.holder.SideFragment;
+import com.refoler.app.ui.holder.SideFragmentHolder;
 import com.refoler.app.ui.utils.PrefsCard;
 import com.refoler.app.ui.utils.ToastHelper;
 import com.refoler.app.utils.BillingHelper;
 
+import org.jetbrains.annotations.TestOnly;
 import org.json.JSONException;
 
 import java.io.IOException;
@@ -81,6 +88,7 @@ public class FileDetailFragment extends SideFragment {
         outState.putInt("fileIconResId", fileIconResId);
     }
 
+    @UnstableApi
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -100,6 +108,7 @@ public class FileDetailFragment extends SideFragment {
         PrefsCard fileSizeItem = view.findViewById(R.id.fileSizeItem);
         PrefsCard fileHashItem = view.findViewById(R.id.fileHashItem);
         PrefsCard filePermissionItem = view.findViewById(R.id.filePermissionItem);
+        PrefsCard fileVideoPlay  = view.findViewById(R.id.fileVideoPlay);
 
         LinearLayout waringLayout = view.findViewById(R.id.waringLayout);
         TextView waringTextView = view.findViewById(R.id.waringText);
@@ -119,6 +128,8 @@ public class FileDetailFragment extends SideFragment {
         filePathItem.setDescription(remoteFile.getPath().replace(remoteFile.getName(), ""));
         fileDateItem.setDescription(new SimpleDateFormat(getString(R.string.default_date_format), Locale.getDefault()).format(remoteFile.getLastModified()));
         fileSizeItem.setDescription(remoteFile.getSize() + " Bytes");
+        fileVideoPlay.setVisibility(fileIconResId == com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_video_clip_24_regular
+                && BuildConfig.DEBUG? View.VISIBLE : View.GONE);
 
         if (remoteFile.hasPermissionInfo()) {
             ArrayList<String> permissionInfo = new ArrayList<>();
@@ -144,47 +155,7 @@ public class FileDetailFragment extends SideFragment {
             waringTextView.setText(bigFileWarning);
         }
 
-        downloadButton.setOnClickListener(v -> {
-            try {
-                downloadButton.setEnabled(false);
-                FileAction.ActionRequest.Builder actionRequest = FileAction.ActionRequest.newBuilder();
-                actionRequest.setActionType(FileAction.ActionType.OP_UPLOAD);
-                actionRequest.addTargetFiles(remoteFile.getPath());
-                FileActionRequester.setChallengeCode(device, actionRequest);
-
-                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, getString(R.string.action_notification_upload_channel))
-                        .setSmallIcon(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_arrow_download_24_regular)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .setOnlyAlertOnce(true)
-                        .setGroupSummary(false)
-                        .setOngoing(true)
-                        .setAutoCancel(false)
-                        .setContentTitle(mContext.getString(R.string.action_notification_upload_title))
-                        .setProgress(0, 0, true);
-
-                FileActionRequester.getInstance().requestAction(mContext, device, actionRequest, (device, uploadResponse) -> {
-                    Applications.cancelNotification(mContext, actionRequest.getChallengeCode().hashCode());
-                    FileAction.ActionRequest.Builder downloadRequest = FileAction.ActionRequest.newBuilder();
-                    downloadRequest.setActionType(FileAction.ActionType.OP_DOWNLOAD);
-                    downloadRequest.addTargetFiles(remoteFile.getPath());
-
-                    Applications.publishNotification(mContext,
-                            mContext.getString(R.string.action_notification_upload_channel),
-                            mContext.getString(R.string.action_notification_upload_desc),
-                            downloadRequest.hashCode(), mBuilder);
-
-                    DownloadAction downloadAction = new DownloadAction();
-                    downloadAction.performActionOp(mContext, DeviceWrapper.getSelfDeviceInfo(mContext), downloadRequest.build(), downloadResponse -> {
-                        if(downloadResponse.getResult(0).getResultSuccess()) {
-                            mContext.runOnUiThread(() -> downloadButton.setEnabled(true));
-                        }
-                    });
-                });
-            } catch (JSONException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
+        downloadButton.setOnClickListener(v -> requestDownload(downloadButton));
         fileHashItem.setOnClickListener(v -> {
             if (isHashReceived) {
                 copyInfoClip(fileHashItem.getDescriptionString());
@@ -216,10 +187,86 @@ public class FileDetailFragment extends SideFragment {
             }
         });
 
+        fileVideoPlay.setOnClickListener(v -> SideFragmentHolder.getInstance().pushFragment(mContext, true, new StreamFragment(device, remoteFile)));
         fileNameItem.setOnClickListener(v -> copyInfoClip(fileNameItem.getDescriptionString()));
         filePathItem.setOnClickListener(v -> copyInfoClip(filePathItem.getDescriptionString()));
         fileDateItem.setOnClickListener(v -> copyInfoClip(fileDateItem.getDescriptionString()));
         fileSizeItem.setOnClickListener(v -> copyInfoClip(String.valueOf(remoteFile.getSize())));
+    }
+
+    void requestDownload(MaterialButton downloadButton) {
+        if(BuildConfig.DEBUG) {
+            try {
+                requestSocketDownload(downloadButton);
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                downloadButton.setEnabled(true);
+                return;
+            }
+        }
+
+        try {
+            downloadButton.setEnabled(false);
+            FileAction.ActionRequest.Builder actionRequest = FileAction.ActionRequest.newBuilder();
+            actionRequest.setActionType(FileAction.ActionType.OP_UPLOAD);
+            actionRequest.addTargetFiles(remoteFile.getPath());
+            FileActionRequester.setChallengeCode(device, actionRequest);
+
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mContext, getString(R.string.action_notification_upload_channel))
+                    .setSmallIcon(com.microsoft.fluent.mobile.icons.R.drawable.ic_fluent_arrow_download_24_regular)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setOnlyAlertOnce(true)
+                    .setGroupSummary(false)
+                    .setOngoing(true)
+                    .setAutoCancel(false)
+                    .setContentTitle(mContext.getString(R.string.action_notification_upload_title))
+                    .setProgress(0, 0, true);
+
+            FileActionRequester.getInstance().requestAction(mContext, device, actionRequest, (device, uploadResponse) -> {
+                Applications.cancelNotification(mContext, actionRequest.getChallengeCode().hashCode());
+                FileAction.ActionRequest.Builder downloadRequest = FileAction.ActionRequest.newBuilder();
+                downloadRequest.setActionType(FileAction.ActionType.OP_DOWNLOAD);
+                downloadRequest.addTargetFiles(remoteFile.getPath());
+
+                Applications.publishNotification(mContext,
+                        mContext.getString(R.string.action_notification_upload_channel),
+                        mContext.getString(R.string.action_notification_upload_desc),
+                        downloadRequest.hashCode(), mBuilder);
+
+                DownloadAction downloadAction = new DownloadAction();
+                downloadAction.performActionOp(mContext, DeviceWrapper.getSelfDeviceInfo(mContext), downloadRequest.build(), downloadResponse -> {
+                    if(downloadResponse.getResult(0).getResultSuccess()) {
+                        mContext.runOnUiThread(() -> downloadButton.setEnabled(true));
+                    }
+                });
+            });
+        } catch (JSONException | IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @TestOnly
+    void requestSocketDownload(MaterialButton downloadButton) {
+        downloadButton.setEnabled(false);
+        new Thread(() -> {
+            FileAction.ActionRequest.Builder actionRequest = FileAction.ActionRequest.newBuilder();
+            actionRequest.setActionType(FileAction.ActionType.OP_DOWNLOAD);
+            actionRequest.addTargetFiles(remoteFile.getPath());
+            actionRequest.setOverrideExists(true);
+            FileActionRequester.setChallengeCode(device, actionRequest);
+
+            SocketDownloadAction downloadAction = new SocketDownloadAction();
+            try {
+                downloadAction.performActionOp(mContext, device, actionRequest.build(), downloadResponse -> {
+                    if(downloadResponse.getResult(0).getResultSuccess()) {
+                        mContext.runOnUiThread(() -> downloadButton.setEnabled(true));
+                    }
+                });
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
     }
 
     void copyInfoClip(String data) {

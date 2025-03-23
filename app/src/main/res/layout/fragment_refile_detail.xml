@@ -89,8 +89,16 @@
                 android:id="@+id/fileHashItem"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                item:cardDescription="Click here to get file hash"
+                item:cardDescription="@string/refoler_detail_data_hash_desc"
                 item:cardTitle="@string/refoler_detail_data_hash"
+                item:cardType="title|description" />
+
+            <com.refoler.app.ui.utils.PrefsCard
+                android:id="@+id/fileVideoPlay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                item:cardDescription="@string/refoler_detail_data_video_streaming_desc"
+                item:cardTitle="@string/refoler_detail_data_video_streaming"
                 item:cardType="title|description" />
 
             <LinearLayout

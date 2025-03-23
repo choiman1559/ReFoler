@@ -104,7 +104,7 @@ public class DownloadAction extends ProgressHandler<FileDownloadTask.TaskSnapsho
     /**
      * @noinspection ResultOfMethodCallIgnored
      */
-    public File getFileDownloadDir() {
+    public static File getFileDownloadDir() {
         File downloadDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "ReFoler");
         if (!downloadDir.exists()) {
             downloadDir.mkdirs();

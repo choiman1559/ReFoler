@@ -61,7 +61,10 @@
     <string name="refoler_detail_data_date">Queried Time</string>
     <string name="refoler_detail_data_size">Size</string>
     <string name="refoler_detail_data_hash">MD5 Hash</string>
+    <string name="refoler_detail_data_hash_desc">Click here to get file hash</string>
     <string name="refoler_detail_data_permission">Access Permission</string>
+    <string name="refoler_detail_data_video_streaming">Play video</string>
+    <string name="refoler_detail_data_video_streaming_desc">Streaming video directly on device</string>
 
     <string name="refoler_detail_permission_readable">Readable</string>
     <string name="refoler_detail_permission_writable">Writable</string>
@@ -166,7 +169,7 @@
     <string name="device_detail_action_remove">Remove</string>
     <string name="device_detail_action_request_query">Request Query</string>
     <string name="device_detail_last_queried_title">Last queried</string>
-    <string name="device_detail_last_queried_desc">HH:mm:ss yyyy</string>
+    <string name="device_detail_last_queried_desc">HH:mm:ss dd/MM/yyyy</string>
     <string name="device_detail_last_queried_desc_none">Never queried</string>
     <string name="device_detail_deny_file_action_title">Deny file access</string>
     <string name="device_detail_deny_file_action_desc">Rejects any file download request\nfrom this device</string>
