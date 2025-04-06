@@ -27,6 +27,7 @@ import com.refoler.app.process.db.ReFileCache;
 import com.refoler.app.ui.PrefsKeyConst;
 import com.refoler.app.utils.AESCrypto;
 import com.refoler.app.utils.JsonRequest;
+import com.refoler.app.utils.PowerUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -50,6 +51,8 @@ public class FirebaseMessageService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage message) {
         super.onMessageReceived(message);
+        Objects.requireNonNull(PowerUtils.getInstance(this)).acquire();
+
         try {
             Map<String, String> rawDataMap = message.getData();
             String rawMessage = Objects.requireNonNullElse(rawDataMap.get(EndPointConst.KEY_EXTRA_DATA), "");

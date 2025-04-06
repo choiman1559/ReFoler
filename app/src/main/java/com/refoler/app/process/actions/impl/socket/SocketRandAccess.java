@@ -17,12 +17,14 @@ import com.refoler.app.process.actions.FileActionRequester;
 import java.io.Closeable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @SuppressWarnings("unused, UnusedReturnValue")
 public final class SocketRandAccess extends SocketAction implements Closeable {
 
     private static final String LogTAG = "SocketRandAccess";
     private static final int BUFFER_SIZE = 8192;
+    public static final int RAW_DATA_READ_FINISH = -2;
 
     @Override
     public FileAction.ActionType getActionOpcode() {
@@ -47,6 +49,7 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
     private final boolean isWrite;
 
     private final AtomicBoolean isConnected = new AtomicBoolean(false);
+    private final AtomicReference<String> sessionActionCode = new AtomicReference<>();
     private boolean isSynchronized = false;
     private WebSocketWrapper webSocketWrapper;
     private BufferReceivedListener bufferReceivedListener;
@@ -80,22 +83,21 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
         actionRequest.addTargetFiles(String.valueOf(isWrite));
         FileActionRequester.setChallengeCode(device, actionRequest);
 
-        Log.d("ddd", "ddd1");
+        Log.d(LogTAG, "Started opening peer socket channel...");
         DeAsyncJob<Boolean> booleanDeAsyncJob = new DeAsyncJob<>((job) -> {
             try {
-                Log.d("ddd", "ddd2");
+                Log.d(LogTAG, "Sending initial action make-up request packet...");
                 FileActionRequester.getInstance().requestAction(context, device, actionRequest, (device, response) -> {
                     try {
-                        Log.d("ddd", "ddd3");
-                        setSocketActionCode(response.getResult(0).getExtraData(0));
+                        Log.d(LogTAG, "Received make-up complete signal, Trying connect with relay server...");
+                        sessionActionCode.set(response.getResult(0).getExtraData(0));
                         if (!response.getOverallStatus().equals(PacketConst.STATUS_OK)) {
                             job.setResult(false);
                             return;
                         }
 
-                        Log.d("ddd", "ddd4");
                         performActionOp(context, this.device, actionRequest.build(), (actionResponse) -> {
-                            Log.d("ddd", "ddd5");
+                            Log.d(LogTAG, "Successfully Connected to relay server.");
                             if (response.getOverallStatus().equals(PacketConst.STATUS_OK)) {
                                 job.setResult(true);
                             } else {
@@ -116,18 +118,17 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
         final boolean booleanDeAsyncJobResult = booleanDeAsyncJob.runAndWait();
         if (!isSynchronized || !booleanDeAsyncJobResult) return booleanDeAsyncJobResult;
 
-        Log.d("ddd", "ddd6");
-        DeAsyncJob<Boolean> ackWaitingJob = new DeAsyncJob<>((job) -> {
-            Log.d("ddd", "ddd7: " + isConnected.get() + " socket: " + (webSocketWrapper == null));
+        Log.d(LogTAG, "Sending header (peer info) packet to relay server...");
+        boolean ackWaitingResult = new DeAsyncJob<Boolean>((job) -> {
+            Log.d(LogTAG, "Waiting for server ACK signal, isSocketConnected: " + isConnected.get() + " isSocketNull: " + (webSocketWrapper == null));
             if (isConnected.get()) job.setResult(true);
             else synchronizedResult = result -> {
-                Log.d("ddd", "ddd7_1: " + isConnected.get() + " socket: " + (webSocketWrapper == null));
+                Log.d(LogTAG, "Received ACK from server, Now waiting for peer connected; isSocketConnected: " + isConnected.get() + " isSocketNull: " + (webSocketWrapper == null));
                 job.setResult(true);
             };
-        });
-        Log.d("ddd", "ddd8");
-        boolean ackWaitingResult = ackWaitingJob.runAndWait();
-        Log.d("ddd", "ddd9 : " + ackWaitingResult + " socket: " + (webSocketWrapper == null));
+        }).runAndWait();
+
+        Log.d(LogTAG, "Successfully connected to peer, File I/O Channel opened: " + ackWaitingResult + ", isSocketNull: " + (webSocketWrapper == null));
         return ackWaitingResult;
     }
 
@@ -251,7 +252,6 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
     @Override
     public void onConnected(WebSocketWrapper webSocketWrapper) {
         super.onConnected(webSocketWrapper);
-        Log.d("ddd", "Connected!");
         this.webSocketWrapper = webSocketWrapper;
     }
 
@@ -270,7 +270,6 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
         if (procedure.hasControl()) {
             switch (procedure.getControl()) {
                 case CTRL_ACK -> {
-                    Log.d("ddd", "ddd_acked");
                     isConnected.set(true);
                     if (isSynchronized && synchronizedResult != null) {
                         (synchronizedResult).onResult(null);
@@ -311,5 +310,10 @@ public final class SocketRandAccess extends SocketAction implements Closeable {
                 }
             }
         }
+    }
+
+    @Override
+    public String requireSocketSessionCode() {
+        return Objects.requireNonNull(sessionActionCode.get());
     }
 }

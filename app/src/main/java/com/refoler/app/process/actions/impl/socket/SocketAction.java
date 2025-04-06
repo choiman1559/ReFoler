@@ -23,29 +23,21 @@ public abstract class SocketAction implements ActionOp {
 
     private static final String LogTAG = "SocketAction";
     protected final AtomicBoolean isConnected = new AtomicBoolean(false);
-    protected String socketActionCode;
     private WebSocketWrapper webSocketWrapper;
-
-    public SocketAction() {
-        socketActionCode = generateSocketCode();
-    }
-
-    public void setSocketActionCode(String socketActionCode) {
-        this.socketActionCode = socketActionCode;
-    }
 
     @Override
     public void performActionOp(Context context, Refoler.Device requester, FileAction.ActionRequest actionRequest, FileActionWorker.ActionCallback callback) throws Exception {
+        final String socketSessionCode = requireSocketSessionCode();
         FileAction.ActionResponse.Builder actionResponse = FileAction.ActionResponse.newBuilder();
         actionResponse.setChallengeCode(actionRequest.getChallengeCode());
-        actionResponse.addResult(FileAction.ActionResult.newBuilder().addExtraData(socketActionCode).build());
+        actionResponse.addResult(FileAction.ActionResult.newBuilder().addExtraData(socketSessionCode).build());
         actionResponse.setOverallStatus(PacketConst.STATUS_OK);
 
         Refoler.RequestPacket.Builder requestPacket = Refoler.RequestPacket.newBuilder();
         requestPacket.setUid(Applications.getUid(context));
         requestPacket.addDevice(DeviceWrapper.getSelfDeviceInfo(context));
         requestPacket.addDevice(requester);
-        requestPacket.setExtraData(socketActionCode);
+        requestPacket.setExtraData(socketSessionCode);
 
         webSocketWrapper = new WebSocketWrapper(context);
         webSocketWrapper.setOnDataReceiveListener(new WebSocketWrapper.OnDataReceiveListener() {
@@ -122,7 +114,7 @@ public abstract class SocketAction implements ActionOp {
         return false;
     }
 
-    private String generateSocketCode() {
+    public String requireSocketSessionCode() {
         return UUID.randomUUID().toString();
     }
 

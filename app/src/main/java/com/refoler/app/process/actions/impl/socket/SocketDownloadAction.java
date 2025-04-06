@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @TestOnly
 public class SocketDownloadAction implements ActionOp {
 
-    public static final int BUFFER_SIZE = 1048576; // 1024KB Buffer
+    public static final int BUFFER_SIZE = 2 * 1024 * 1024; // 2MB Buffer
 
     /** @noinspection ResultOfMethodCallIgnored*/
     @Override
